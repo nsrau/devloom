@@ -50,19 +50,28 @@ no human intervention required after the initial prompt.
 
 ## Installation
 
+**From GitHub (recommended until published to npm):**
+
+```bash
+npm install -g https://github.com/nsrau/devloom.git
+```
+
+**From source:**
+
+```bash
+git clone https://github.com/nsrau/devloom.git
+cd devloom
+npm install && npm run build && node postinstall.mjs
+```
+
+**From npm (once published):**
+
 ```bash
 npm install -g devloom
 ```
 
-The post-install script automatically copies all agent, command, and skill
-files to your OpenCode global config directory.
-
-**Manual install (from source):**
-
-```bash
-git clone https://github.com/nsrau/devloom.git
-cd devloom && npm install && npm run build && node postinstall.mjs
-```
+All methods run the post-install script that copies agents, commands, and skills
+to your OpenCode global config directory.
 
 **Per-project via `opencode.json`:**
 
