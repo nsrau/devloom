@@ -50,7 +50,13 @@ no human intervention required after the initial prompt.
 
 ## Installation
 
-**From GitHub (recommended until published to npm):**
+**From npm (recommended):**
+
+```bash
+npm install -g devloom
+```
+
+**From GitHub:**
 
 ```bash
 npm install -g https://github.com/nsrau/devloom.git
@@ -62,12 +68,6 @@ npm install -g https://github.com/nsrau/devloom.git
 git clone https://github.com/nsrau/devloom.git
 cd devloom
 npm install && npm run build && node postinstall.mjs
-```
-
-**From npm (once published):**
-
-```bash
-npm install -g devloom
 ```
 
 All methods run the post-install script that copies agents, commands, and skills
