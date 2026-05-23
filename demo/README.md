@@ -1,8 +1,6 @@
 # Demo: Task List App — Built with DevLoom
 
-This folder is a **demo copy** of a full-stack Task List web app generated entirely by [**DevLoom**](https://github.com/anomalyco/devloom), an autonomous multi-agent software development system built on top of OpenCode.
-
-The original generated project lives at [`../../devloom-demo`](../../devloom-demo).
+This folder is a full-stack Task List web app generated entirely by [**DevLoom**](https://github.com/anomalyco/devloom), an autonomous multi-agent software development system built on top of OpenCode.
 
 ## Prompt Used
 
