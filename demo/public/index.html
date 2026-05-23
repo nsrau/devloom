@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task List</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+        Ubuntu, Cantarell, sans-serif;
+      background: #f4f5f7;
+      color: #1a1a1a;
+      line-height: 1.5;
+      padding: 1rem;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 540px;
+      margin-top: 2rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1.25rem;
+      color: #222;
+    }
+
+    .add-form {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .add-form input {
+      flex: 1;
+      padding: 0.625rem 0.75rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .add-form input:focus {
+      border-color: #4a90d9;
+      box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.15);
+    }
+
+    .add-form button {
+      padding: 0.625rem 1.25rem;
+      font-size: 1rem;
+      font-weight: 600;
+      background: #4a90d9;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+
+    .add-form button:hover { background: #357abd; }
+    .add-form button:disabled {
+      background: #a0c4e8;
+      cursor: not-allowed;
+    }
+
+    .state-message {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: #777;
+      font-size: 0.95rem;
+    }
+
+    .state-message.error {
+      color: #c0392b;
+    }
+
+    .task-list {
+      list-style: none;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      padding: 0.625rem 0.75rem;
+      background: #fff;
+      border-radius: 6px;
+      margin-bottom: 0.375rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+      transition: box-shadow 0.15s;
+    }
+
+    .task-item:hover {
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .task-item input[type="checkbox"] {
+      width: 1.125rem;
+      height: 1.125rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      accent-color: #4a90d9;
+    }
+
+    .task-item .title {
+      flex: 1;
+      font-size: 0.95rem;
+      word-break: break-word;
+    }
+
+    .task-item .title.completed {
+      text-decoration: line-through;
+      color: #999;
+    }
+
+    .task-item .delete-btn {
+      padding: 0.3rem 0.625rem;
+      font-size: 0.8rem;
+      background: transparent;
+      color: #c0392b;
+      border: 1px solid #e0c0c0;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      flex-shrink: 0;
+    }
+
+    .task-item .delete-btn:hover {
+      background: #c0392b;
+      color: #fff;
+      border-color: #c0392b;
+    }
+
+    .task-item .delete-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 480px) {
+      body { padding: 0.75rem; }
+      .container { margin-top: 1rem; }
+      h1 { font-size: 1.25rem; }
+      .add-form { flex-direction: column; }
+      .add-form button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Task List</h1>
+
+    <form class="add-form" id="addForm">
+      <input type="text" id="taskInput" placeholder="Add a new task…" required autocomplete="off">
+      <button type="submit" id="addBtn">Add</button>
+    </form>
+
+    <div id="taskListContainer">
+      <div class="state-message" id="stateMessage">Loading…</div>
+      <ul class="task-list" id="taskList"></ul>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var taskListEl = document.getElementById('taskList');
+      var stateMessageEl = document.getElementById('stateMessage');
+      var addForm = document.getElementById('addForm');
+      var taskInput = document.getElementById('taskInput');
+      var addBtn = document.getElementById('addBtn');
+
+      // --- API helpers ---
+
+      function apiFetch(path, options) {
+        return fetch('/api' + path, options).then(function (res) {
+          if (!res.ok) {
+            return res.json().then(function (data) {
+              var err = new Error(data.error || 'Request failed');
+              err.status = res.status;
+              throw err;
+            });
+          }
+          return res.json();
+        });
+      }
+
+      function getTasks() {
+        return apiFetch('/tasks');
+      }
+
+      function createTask(title) {
+        return apiFetch('/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: title })
+        });
+      }
+
+      function updateTask(id, completed) {
+        return apiFetch('/tasks/' + id, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ completed: completed })
+        });
+      }
+
+      function deleteTask(id) {
+        return apiFetch('/tasks/' + id, { method: 'DELETE' });
+      }
+
+      // --- Render ---
+
+      function renderTasks(tasks) {
+        taskListEl.innerHTML = '';
+
+        if (tasks.length === 0) {
+          stateMessageEl.textContent = 'No tasks yet. Add one above!';
+          stateMessageEl.className = 'state-message';
+          stateMessageEl.style.display = 'block';
+          return;
+        }
+
+        stateMessageEl.style.display = 'none';
+
+        tasks.forEach(function (task) {
+          var li = document.createElement('li');
+          li.className = 'task-item';
+          li.dataset.id = task.id;
+
+          var checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.checked = task.completed;
+          checkbox.addEventListener('change', function () {
+            var newCompleted = checkbox.checked;
+            checkbox.disabled = true;
+            updateTask(task.id, newCompleted).then(function (updated) {
+              checkbox.checked = updated.completed;
+              titleEl.className = 'title' + (updated.completed ? ' completed' : '');
+            }).catch(function () {
+              checkbox.checked = !newCompleted;
+            }).finally(function () {
+              checkbox.disabled = false;
+            });
+          });
+
+          var titleEl = document.createElement('span');
+          titleEl.className = 'title' + (task.completed ? ' completed' : '');
+          titleEl.textContent = task.title;
+
+          var deleteBtn = document.createElement('button');
+          deleteBtn.className = 'delete-btn';
+          deleteBtn.textContent = 'Delete';
+          deleteBtn.addEventListener('click', function () {
+            deleteBtn.disabled = true;
+            deleteTask(task.id).then(function () {
+              li.remove();
+              var remaining = taskListEl.querySelectorAll('.task-item').length;
+              if (remaining === 0) {
+                stateMessageEl.textContent = 'No tasks yet. Add one above!';
+                stateMessageEl.className = 'state-message';
+                stateMessageEl.style.display = 'block';
+              }
+            }).catch(function () {
+              deleteBtn.disabled = false;
+            });
+          });
+
+          li.appendChild(checkbox);
+          li.appendChild(titleEl);
+          li.appendChild(deleteBtn);
+          taskListEl.appendChild(li);
+        });
+      }
+
+      function showError(msg) {
+        stateMessageEl.textContent = msg;
+        stateMessageEl.className = 'state-message error';
+        stateMessageEl.style.display = 'block';
+        taskListEl.innerHTML = '';
+      }
+
+      // --- Initial load ---
+
+      getTasks().then(function (tasks) {
+        renderTasks(tasks);
+      }).catch(function () {
+        showError('Error loading tasks');
+      });
+
+      // --- Add task ---
+
+      addForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var title = taskInput.value.trim();
+        if (!title) return;
+
+        addBtn.disabled = true;
+        createTask(title).then(function (task) {
+          taskInput.value = '';
+          taskInput.focus();
+
+          // Hide empty state if showing
+          stateMessageEl.style.display = 'none';
+
+          var li = document.createElement('li');
+          li.className = 'task-item';
+          li.dataset.id = task.id;
+
+          var checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.checked = task.completed;
+          checkbox.addEventListener('change', function () {
+            var newCompleted = checkbox.checked;
+            checkbox.disabled = true;
+            updateTask(task.id, newCompleted).then(function (updated) {
+              checkbox.checked = updated.completed;
+              titleEl.className = 'title' + (updated.completed ? ' completed' : '');
+            }).catch(function () {
+              checkbox.checked = !newCompleted;
+            }).finally(function () {
+              checkbox.disabled = false;
+            });
+          });
+
+          var titleEl = document.createElement('span');
+          titleEl.className = 'title' + (task.completed ? ' completed' : '');
+          titleEl.textContent = task.title;
+
+          var deleteBtn = document.createElement('button');
+          deleteBtn.className = 'delete-btn';
+          deleteBtn.textContent = 'Delete';
+          deleteBtn.addEventListener('click', function () {
+            deleteBtn.disabled = true;
+            deleteTask(task.id).then(function () {
+              li.remove();
+              var remaining = taskListEl.querySelectorAll('.task-item').length;
+              if (remaining === 0) {
+                stateMessageEl.textContent = 'No tasks yet. Add one above!';
+                stateMessageEl.className = 'state-message';
+                stateMessageEl.style.display = 'block';
+              }
+            }).catch(function () {
+              deleteBtn.disabled = false;
+            });
+          });
+
+          li.appendChild(checkbox);
+          li.appendChild(titleEl);
+          li.appendChild(deleteBtn);
+          taskListEl.appendChild(li);
+        }).catch(function () {
+          showError('Error loading tasks');
+        }).finally(function () {
+          addBtn.disabled = false;
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

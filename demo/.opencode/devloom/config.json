@@ -1,0 +1,10 @@
+{
+  "models": {
+    "orchestrator": "opencode/deepseek-v4-flash-free",
+    "analyst": "opencode/deepseek-v4-flash-free",
+    "architect": "opencode/deepseek-v4-flash-free",
+    "developer": "opencode/deepseek-v4-flash-free",
+    "qa": "opencode/deepseek-v4-flash-free",
+    "documenter": "opencode/deepseek-v4-flash-free"
+  }
+}

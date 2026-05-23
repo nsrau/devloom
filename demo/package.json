@@ -1,0 +1,15 @@
+{
+  "name": "simple-task-list",
+  "version": "1.0.0",
+  "description": "Simple Task List Web App with Express and sql.js",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/integration.test.mjs"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "sql.js": "^1.11.0"
+  },
+  "private": true
+}

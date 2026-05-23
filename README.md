@@ -211,6 +211,25 @@ Increase `max_steps` in `~/.config/opencode/agents/devloom-orchestrator.md` (def
 
 ---
 
+## Demo
+
+A working example of what DevLoom produces is available in the [`demo/`](demo/) folder. It was generated from the prompt:
+
+```
+/devloom Build a very simple full-stack Task List web app.
+```
+
+The app is a full-stack Task List with an Express + SQLite backend and vanilla JS frontend, including integration tests. The original generated project is at [`../devloom-demo`](../devloom-demo).
+
+```bash
+cd demo
+npm install
+npm start
+# Open http://localhost:3000
+```
+
+---
+
 ## License
 
 MIT
