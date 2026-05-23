@@ -1,5 +1,6 @@
 ---
-mode: primary
+description: "DevLoom Orchestrator — master weaver that orchestrates analyst, architect, developer, QA, and documenter agents to turn a single prompt into tested, documented software"
+mode: subagent
 model: opencode/deepseek-v4-flash-free
 max_steps: 200
 permission:

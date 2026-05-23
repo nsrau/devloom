@@ -10,6 +10,20 @@ subtask: false
 # Create .opencode/devloom directory if not exists
 mkdir -p .opencode/devloom
 
+# Prompt sanitization: truncate and strip control characters
+export SANITIZED_PROMPT="$(node -e "
+  let p = process.argv[1] || '';
+  p = p.slice(0, 4000).replace(/[\x00-\x08\x0E-\x1F\x7F]/g, '');
+  const suspicious = /[\`\$\(\);\|&]/.test(p);
+  if (suspicious) console.error('⚠️  Warning: prompt contains shell metacharacters');
+  process.stdout.write(p);
+" -- "$ARGUMENTS" 2>&1)"
+
+# If sanitization produced output, use it; fallback to raw ARGUMENTS
+if [ -z "$SANITIZED_PROMPT" ] && [ -n "$ARGUMENTS" ]; then
+  SANITIZED_PROMPT="$ARGUMENTS"
+fi
+
 # Load project config — local config.json overrides global agent models
 # ALL models MUST use opencode/ API prefix (e.g. opencode/deepseek-v4-flash-free)
 if [ -f ".opencode/devloom/config.json" ]; then
@@ -68,7 +82,8 @@ fi
 
 $ARGUMENTS
 
-IMPORTANT: 
+IMPORTANT:
+- Use `$SANITIZED_PROMPT` (sanitized, truncated to 4000 chars) as the user's prompt for all processing. The raw `$ARGUMENTS` is the original user input.
 - If RESUMING_FROM_STATE: Use PRE-PHASE 0 resume detection. Skip completed phases.
 - Otherwise: Run full PHASE 0 → PHASE 1 → PHASE 2 → PHASE 3 workflow.
 

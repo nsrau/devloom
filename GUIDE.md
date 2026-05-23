@@ -447,6 +447,42 @@ rm -rf ~/.config/opencode/skills/
 
 ---
 
+## Security Considerations
+
+### Permissions
+
+DevLoom operates with your user permissions. It does not escalate privileges.
+The agent `permission` blocks in `~/.config/opencode/agents/devloom-*.md` define
+what each agent can do (edit files, run shell commands, fetch URLs, etc.).
+Review these permissions and restrict them if needed.
+
+### Prompt Sanitization
+
+User prompts are truncated to 4000 characters and control characters are stripped
+before they reach the orchestrator. This provides basic injection prevention.
+However, AI agents may still follow instructions embedded in prompts — always
+review generated output critically.
+
+### Path Traversal Protection
+
+The `postinstall.mjs` script validates all destination paths to ensure they stay
+within the OpenCode config directory (`~/.config/opencode/`). Paths containing
+`..` or absolute paths outside the config directory are rejected.
+
+### Reporting Vulnerabilities
+
+See [SECURITY.md](SECURITY.md) for our responsible disclosure policy.
+
+### Best Practices
+
+- Pin exact versions in `package.json` instead of using ranges.
+- Review all generated code before committing or deploying.
+- Run `npm audit` regularly to check dependency vulnerabilities.
+- Keep DevLoom state in `.opencode/devloom/` and add it to `.gitignore` if you
+  do not want execution state tracked in version control.
+
+---
+
 ## Architecture Reference
 
 ```
@@ -475,11 +511,18 @@ devloom/
 │   ├── verify/     quality-assurance, debugging
 │   ├── review/     code-review, security-review, performance-review
 │   └── ship/       documentation
-├── postinstall.mjs           # Copies agents + commands + skills to config dir
+├── __tests__/                    # Unit tests (Jest)
+│   ├── index.test.ts             # Plugin smoke test
+│   ├── plugin.test.ts            # Lifecycle hook tests
+│   └── postinstall.test.ts       # Post-install security + path tests
+├── postinstall.mjs               # Copies agents + commands + skills to config dir
+├── SECURITY.md                   # Security policy and disclosure
+├── jest.config.mjs               # Jest test configuration
 ├── package.json
 ├── tsconfig.json
 ├── README.md
-└── GUIDE.md                  # This file
+├── GUIDE.md                      # This file
+└── .github/workflows/ci.yml      # CI pipeline (Node 18, 20, 22)
 ```
 
 ---
