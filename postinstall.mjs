@@ -6,26 +6,29 @@ import { homedir, platform } from "os"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-function getConfigDir() {
-  const os = platform()
-  if (os === "win32") {
-    return resolve(process.env.APPDATA ?? homedir(), "opencode")
+export function getConfigDir(_platform = platform(), _homedir = homedir()) {
+  if (_platform === "win32") {
+    return resolve(process.env.APPDATA ?? _homedir, "opencode")
   }
-  if (os === "darwin") {
-    return resolve(homedir(), "Library", "Application Support", "opencode")
+  if (_platform === "darwin") {
+    return resolve(_homedir, "Library", "Application Support", "opencode")
   }
   return resolve(
-    process.env.XDG_CONFIG_HOME ?? join(homedir(), ".config"),
+    process.env.XDG_CONFIG_HOME ?? join(_homedir, ".config"),
     "opencode"
   )
 }
 
-function isPathSafe(basePath, resolvedPath) {
+export function isPathSafe(basePath, resolvedPath) {
   const rel = relative(basePath, resolvedPath)
   return !rel.startsWith("..") && !rel.startsWith("/")
 }
 
-function ensureDir(dir) {
+export function isDebug() {
+  return process.env.DEVLOOM_DEBUG === "1" || process.env.DEVLOOM_DEBUG === "true"
+}
+
+export function ensureDir(dir) {
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true })
     if (isDebug()) console.log(`[debug] Created directory: ${dir}`)
@@ -33,20 +36,17 @@ function ensureDir(dir) {
   }
 }
 
-function isDebug() {
-  return process.env.DEVLOOM_DEBUG === "1" || process.env.DEVLOOM_DEBUG === "true"
-}
-
 let installFailed = false
 
-function installFile(src, dest, label) {
+export function installFile(src, dest, label, configDir) {
+  const baseDir = configDir || getConfigDir()
   if (!existsSync(src)) {
     console.error(`  Source file not found: ${src}`)
     installFailed = true
     return
   }
   const destDir = dirname(dest)
-  if (!isPathSafe(CONFIG_DIR, resolve(destDir))) {
+  if (!isPathSafe(baseDir, resolve(destDir))) {
     console.error(`  Path traversal blocked -- ${label}: ${dest}`)
     installFailed = true
     return
@@ -71,7 +71,8 @@ function installFile(src, dest, label) {
   }
 }
 
-function installDirRecursive(srcDir, destDir, labelPrefix) {
+export function installDirRecursive(srcDir, destDir, labelPrefix, configDir) {
+  const baseDir = configDir || getConfigDir()
   if (!existsSync(srcDir)) {
     console.error(`  Source dir not found: ${srcDir}`)
     installFailed = true
@@ -84,9 +85,9 @@ function installDirRecursive(srcDir, destDir, labelPrefix) {
     const destPath = join(destDir, entry)
     const stat = statSync(srcPath)
     if (stat.isDirectory()) {
-      installDirRecursive(srcPath, destPath, `${labelPrefix}/${entry}`)
+      installDirRecursive(srcPath, destPath, `${labelPrefix}/${entry}`, baseDir)
     } else {
-      installFile(srcPath, destPath, `${labelPrefix}/${entry}`)
+      installFile(srcPath, destPath, `${labelPrefix}/${entry}`, baseDir)
     }
   }
 }
@@ -161,13 +162,6 @@ Debug mode:
   }
 }
 
-main()
-
-export {
-  getConfigDir,
-  isPathSafe,
-  ensureDir,
-  installFile,
-  installDirRecursive,
-  isDebug,
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+  main()
 }

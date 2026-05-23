@@ -1,25 +1,10 @@
-import { jest, describe, expect, test, beforeEach } from "@jest/globals"
-
-const mockFs = {
-  existsSync: jest.fn<() => boolean>(),
-  mkdirSync: jest.fn(),
-  copyFileSync: jest.fn(),
-  readdirSync: jest.fn(),
-  statSync: jest.fn(),
-  accessSync: jest.fn(),
-  constants: { W_OK: 2, R_OK: 4, X_OK: 1, F_OK: 0 },
-}
-
-const mockOs = {
-  homedir: jest.fn<() => string>(),
-  platform: jest.fn<() => string>(),
-}
-
-jest.unstable_mockModule("fs", () => mockFs)
-jest.unstable_mockModule("os", () => mockOs)
-
-mockOs.platform.mockReturnValue("linux")
-mockOs.homedir.mockReturnValue("/home/user")
+import { jest, describe, expect, test, beforeEach, afterEach } from "@jest/globals"
+import {
+  mkdtempSync, writeFileSync, existsSync, readFileSync, rmSync,
+  chmodSync, mkdirSync, accessSync, constants,
+} from "fs"
+import { join } from "path"
+import { tmpdir } from "os"
 
 jest.spyOn(process, "exit").mockImplementation(() => undefined as unknown as never)
 jest.spyOn(console, "log").mockImplementation(() => {})
@@ -34,40 +19,30 @@ describe("getConfigDir", () => {
   })
 
   test("returns Linux path by default", () => {
-    mockOs.platform.mockReturnValue("linux")
-    mockOs.homedir.mockReturnValue("/home/user")
-    const dir = getConfigDir()
+    const dir = getConfigDir("linux", "/home/user")
     expect(dir).toBe("/home/user/.config/opencode")
   })
 
   test("uses XDG_CONFIG_HOME on Linux when set", () => {
-    mockOs.platform.mockReturnValue("linux")
-    mockOs.homedir.mockReturnValue("/home/user")
     process.env.XDG_CONFIG_HOME = "/custom/config"
-    const dir = getConfigDir()
+    const dir = getConfigDir("linux", "/home/user")
     expect(dir).toBe("/custom/config/opencode")
   })
 
   test("returns macOS path", () => {
-    mockOs.platform.mockReturnValue("darwin")
-    mockOs.homedir.mockReturnValue("/Users/user")
-    const dir = getConfigDir()
+    const dir = getConfigDir("darwin", "/Users/user")
     expect(dir).toBe("/Users/user/Library/Application Support/opencode")
   })
 
   if (process.platform === "win32") {
-    test("returns Windows path", () => {
-      mockOs.platform.mockReturnValue("win32")
+    test("returns Windows path with APPDATA", () => {
       process.env.APPDATA = "C:\\Users\\user\\AppData\\Roaming"
-      const dir = getConfigDir()
+      const dir = getConfigDir("win32", "C:\\Users\\user")
       expect(dir).toBe("C:\\Users\\user\\AppData\\Roaming\\opencode")
     })
 
     test("falls back to homedir on Windows when APPDATA is missing", () => {
-      mockOs.platform.mockReturnValue("win32")
-      delete process.env.APPDATA
-      mockOs.homedir.mockReturnValue("C:\\Users\\user")
-      const dir = getConfigDir()
+      const dir = getConfigDir("win32", "C:\\Users\\user")
       expect(dir).toBe("C:\\Users\\user\\opencode")
     })
   }
@@ -92,66 +67,101 @@ describe("isPathSafe", () => {
 })
 
 describe("ensureDir", () => {
+  let tmpDir: string
+
   beforeEach(() => {
-    mockFs.existsSync.mockReset()
-    mockFs.mkdirSync.mockReset()
+    tmpDir = mkdtempSync(join(tmpdir(), "devloom-test-"))
+  })
+
+  afterEach(() => {
+    rmSync(tmpDir, { recursive: true, force: true })
   })
 
   test("creates directory if it does not exist", () => {
-    mockFs.existsSync.mockReturnValue(false)
-    ensureDir("/some/dir")
-    expect(mockFs.mkdirSync).toHaveBeenCalledWith("/some/dir", { recursive: true })
+    const newDir = join(tmpDir, "new-subdir")
+    expect(existsSync(newDir)).toBe(false)
+    ensureDir(newDir)
+    expect(existsSync(newDir)).toBe(true)
   })
 
   test("does nothing if directory exists", () => {
-    mockFs.existsSync.mockReturnValue(true)
-    ensureDir("/some/dir")
-    expect(mockFs.mkdirSync).not.toHaveBeenCalled()
+    mkdirSync(join(tmpDir, "existing"))
+    expect(existsSync(join(tmpDir, "existing"))).toBe(true)
+    expect(() => ensureDir(join(tmpDir, "existing"))).not.toThrow()
   })
 })
 
 describe("installFile", () => {
-  const CONFIG_DIR = "/home/user/.config/opencode"
+  let tmpDir: string
 
   beforeEach(() => {
-    mockFs.existsSync.mockReset()
-    mockFs.accessSync.mockReset()
-    mockFs.copyFileSync.mockReset()
+    tmpDir = mkdtempSync(join(tmpdir(), "devloom-test-"))
+  })
+
+  afterEach(() => {
+    rmSync(tmpDir, { recursive: true, force: true })
   })
 
   test("copies file when source exists and path is safe", () => {
-    mockFs.existsSync.mockReturnValue(true)
-    mockFs.accessSync.mockReturnValue(undefined)
-    const dest = `${CONFIG_DIR}/agents/file.md`
-    installFile("/src/file.md", dest, "Test file")
-    expect(mockFs.copyFileSync).toHaveBeenCalledWith("/src/file.md", dest)
+    const src = join(tmpDir, "source.md")
+    const dest = join(tmpDir, "dest.md")
+    writeFileSync(src, "test content")
+    installFile(src, dest, "Test file", tmpDir)
+    expect(readFileSync(dest, "utf-8")).toBe("test content")
   })
 
   test("reports error when source file is missing", () => {
-    mockFs.existsSync.mockReturnValue(false)
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {})
-    installFile("/src/missing.md", `${CONFIG_DIR}/file.md`, "Missing file")
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("not found"))
-    consoleSpy.mockRestore()
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {})
+    installFile("/nonexistent/source.md", join(tmpDir, "dest.md"), "Missing file", tmpDir)
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("not found"))
+    errorSpy.mockRestore()
   })
 
   test("blocks path traversal", () => {
-    mockFs.existsSync.mockReturnValue(true)
-    mockFs.accessSync.mockReturnValue(undefined)
-    installFile("/src/file.md", "/dest/../../etc/passwd", "Traversal")
-    expect(mockFs.copyFileSync).not.toHaveBeenCalled()
+    const src = join(tmpDir, "source.md")
+    writeFileSync(src, "test")
+    const configDir = join(tmpDir, "base")
+    mkdirSync(configDir)
+    const dest = join(tmpDir, "outside", "file.md")
+    mkdirSync(join(tmpDir, "outside"))
+    installFile(src, dest, "Traversal", configDir)
+    expect(existsSync(dest)).toBe(false)
   })
 
   test("reports error on no write permission", () => {
-    mockFs.existsSync.mockReturnValue(true)
-    const accessErr = new Error("EACCES")
-    ;(accessErr as NodeJS.ErrnoException).code = "EACCES"
-    mockFs.accessSync.mockImplementation(() => { throw accessErr })
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {})
-    installFile("/src/file.md", `${CONFIG_DIR}/agents/file.md`, "No perm")
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("No write permission"))
-    expect(mockFs.copyFileSync).not.toHaveBeenCalled()
-    consoleSpy.mockRestore()
+    const src = join(tmpDir, "source.md")
+    writeFileSync(src, "test")
+    const destDir = join(tmpDir, "readonly")
+    mkdirSync(destDir)
+
+    let canWrite = true
+    try {
+      accessSync(destDir, constants.W_OK)
+    } catch {
+      canWrite = false
+    }
+
+    chmodSync(destDir, 0o444)
+
+    let isReadOnly = true
+    try {
+      accessSync(destDir, constants.W_OK)
+    } catch {
+      isReadOnly = false
+    }
+    isReadOnly = !isReadOnly
+
+    if (!isReadOnly) {
+      chmodSync(destDir, 0o755)
+      return
+    }
+
+    const dest = join(destDir, "file.md")
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {})
+    installFile(src, dest, "No perm", tmpDir)
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("No write permission"))
+    errorSpy.mockRestore()
+    chmodSync(destDir, 0o755)
   })
 })
 
