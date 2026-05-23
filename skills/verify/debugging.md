@@ -1,6 +1,6 @@
 ---
 name: debugging
-description: Five-step triage: reproduce, localize, reduce, fix, guard. Stop-the-line rule.
+description: "Five-step triage: reproduce, localize, reduce, fix, guard. Stop-the-line rule."
 ---
 
 # debugging
