@@ -252,25 +252,85 @@ The Analyst explores your codebase and writes `.opencode/devloom/requirements.md
 The Architect reads the requirements and writes `.opencode/devloom/plan.md`
 with an ordered, dependency-resolved task list.
 
-**Phase 2 — Weave**
+**Phase 2 — Implementation & QA Loop**
 
 For each task in the plan:
 1. The Developer implements the code.
 2. QA writes tests, runs the linter, runs the full test suite, and reports
    `QA_PASS` or `QA_FAIL`.
-3. On failure: the Orchestrator passes the exact failure details back to the
-   Developer for targeted fixes, then QA re-runs. This repeats until the
-   task passes (max 3 attempts, then skipped).
+3. On failure: the Orchestrator routes the defect to Root Cause Analysis → Repair
+   Agent → Regression checks. Up to 3 repair cycles per defect, then skipped.
 4. The Orchestrator marks the task `[x]` in `.opencode/devloom/plan.md`.
 
-**Phase 3 — Finish & Deliver**
+**Phase 3 — Application Exploration**
 
-The Documenter updates `README.md` and any API docs.
-The Orchestrator runs the final build + test gate.
-When everything is green, you see:
+The Explorer Agent starts the application and systematically discovers all
+routes, pages, menus, buttons, forms, inputs, links, tabs, accordions, modals,
+drawers, tables, search fields, and filters. Every discovered element is
+interacted with. The running application is the source of truth — not project
+specifications. Generates `.opencode/devloom/exploration-report.json`.
+
+**Phase 4 — Route, Form, UI & Accessibility Verification**
+
+Three verification agents run in sequence:
+1. **Route Verifier** — Visits every route, checks HTTP status, page content,
+   console errors, and performs DOM inspection (getBoundingClientRect, computed
+   style, visibility, overlap detection).
+2. **Form Verifier** — Tests every form with valid/invalid submissions, field
+   validation, boundary values, error/success messages, and loading states.
+3. **A11y Verifier** — Checks ARIA attributes, labels, keyboard navigation,
+   focus management, tab order, color contrast, and semantic HTML.
+
+**Phase 5 — API Verification & Contract Validation**
+
+The API Verifier discovers all endpoints, validates authentication, authorization,
+input validation, output schema, status codes, error handling, pagination,
+filtering, and sorting. If no OpenAPI spec exists, one is generated from runtime
+behavior. Runtime responses are compared against contract to detect violations.
+
+**Phase 6 — User Journeys & State Exploration**
+
+The Journey Agent generates user journeys from requirements and discovered app
+structure (e.g., Register → Login → Create → Edit → Delete → Logout) and
+executes every journey automatically. State machines are derived from data
+models, and every state transition is tested (including invalid transitions).
+
+**Phase 7 — Cross-Cutting Verification**
+
+Performance checks (build size, load time) and security checks (dependency
+audit, secret scanning, OWASP patterns) are run against the full application.
+
+**Phase 8 — Acceptance Gate (Final)**
+
+The Documenter updates README.md and any API docs.
+The Orchestrator runs the final acceptance gate with all 17 criteria:
 
 ```
-DEVLOOM_DONE
+build: pass
+lint: pass
+unit_tests: pass
+integration_tests: pass
+e2e_tests: pass
+all_routes_visited: pass
+all_buttons_tested: pass
+all_forms_tested: pass
+all_links_verified: pass
+all_user_journeys_passed: pass
+all_api_endpoints_verified: pass
+accessibility_verified: pass
+responsive_layout_verified: pass
+visual_validation_verified: pass
+performance_validation_verified: pass
+security_validation_verified: pass
+no_open_defects: pass
+```
+
+If any gate fails, the Orchestrator routes back to Phase 2 for repair and
+re-verification. `DEVLOOM_DONE` is output only when ALL gates pass.
+
+Completed output example:
+```
+DEVLOOM_DONE — ALL 17 GATES PASSED
 
 Completed 8 tasks:
   - Task 1: Database schema and migration
@@ -374,7 +434,12 @@ skills/
 ├── plan/       architecture-planning
 ├── build/      frontend-development, backend-development, api-design,
 │               incremental-development, test-driven-development
-├── verify/     quality-assurance, debugging
+├── verify/     quality-assurance, debugging, application-exploration,
+│               route-verification, form-verification, dom-inspection,
+│               accessibility-verification, api-verification,
+│               contract-validation, user-journey-generation,
+│               state-exploration, root-cause-analysis, repair,
+│               regression-verification, recovery
 ├── review/     code-review, security-review, performance-review
 └── ship/       documentation
 ```
@@ -424,13 +489,36 @@ Note: this project uses bun test for testing and bun run build for builds.
 
 ### A task keeps failing QA
 
-The Orchestrator retries a failed task up to 3 times. On the third failure it
-logs the task to `.opencode/devloom/errors.md` and moves on. To manually retry:
+The Orchestrator routes failures to:
+1. Root Cause Analysis — determines the root cause
+2. Repair Agent — applies minimal fix
+3. Regression Verification — re-runs all tests
+
+Up to 3 repair cycles per defect, then the defect is marked `escalated` in the
+registry and the task is skipped. To manually retry an escalated task:
 
 1. Open `.opencode/devloom/plan.md` and change `- [x]` back to `- [ ]`
-2. Remove its entry from `.opencode/devloom/errors.md`
+2. Open `.opencode/devloom/defects.json` and remove or reset the defect
 3. Run `/devloom-status` to confirm it is pending
 4. Resume: `/devloom-resume`
+
+### The acceptance gate is failing
+
+Check `.opencode/devloom/defects.json` for open defects. Common gate failures:
+
+| Gate | Common Cause |
+|------|-------------|
+| `all_routes_visited` | Explorer didn't discover all routes — check app starts correctly |
+| `all_forms_tested` | Form verifier found validation issues — check error/success handling |
+| `no_open_defects` | Defects in registry need repair — run RCA + Repair |
+| `accessibility_verified` | ARIA labels or keyboard nav missing — check semantic HTML |
+| `build` | Repair may have introduced build error — Recovery Agent auto-fixes most |
+
+### The Recovery Agent keeps retrying
+
+The Recovery Agent retries 3 times per failure type. If all 3 attempts fail,
+the defect is marked `escalated`. Check `.opencode/devloom/recovery-log.md`
+for the full recovery attempt history.
 
 ---
 
@@ -488,27 +576,42 @@ See [SECURITY.md](SECURITY.md) for our responsible disclosure policy.
 ```
 devloom/
 ├── src/
-│   ├── index.ts              # Plugin entry point (exports DevLoomPlugin)
-│   └── plugin.ts             # Lifecycle hooks: event, tool.execute.before/after
+│   ├── index.ts                   # Plugin entry point (exports DevLoomPlugin)
+│   └── plugin.ts                  # Lifecycle hooks: event, tool.execute.before/after
 ├── agents/
-│   ├── devloom-orchestrator.md   # primary — loop controller
-│   ├── devloom-analyst.md        # subagent — requirements
-│   ├── devloom-architect.md      # subagent — design & task list
-│   ├── devloom-developer.md      # subagent — code implementation
-│   ├── devloom-qa.md             # subagent — tests, lint, verdict
-│   └── devloom-documenter.md     # subagent — docs update
+│   ├── devloom-orchestrator.md    # primary — loop controller, phase manager
+│   ├── devloom-analyst.md         # subagent — requirements analysis
+│   ├── devloom-architect.md       # subagent — design & task list
+│   ├── devloom-developer.md       # subagent — code implementation
+│   ├── devloom-qa.md              # subagent — tests, lint, verdict
+│   ├── devloom-explorer.md        # subagent — app exploration
+│   ├── devloom-route-verifier.md  # subagent — route rendering + DOM inspection
+│   ├── devloom-form-verifier.md   # subagent — form validation testing
+│   ├── devloom-a11y-verifier.md   # subagent — accessibility audit
+│   ├── devloom-api-verifier.md    # subagent — API endpoint verification
+│   ├── devloom-journey-agent.md   # subagent — user journeys + state exploration
+│   ├── devloom-rca.md             # subagent — root cause analysis
+│   ├── devloom-repair.md          # subagent — defect resolution
+│   ├── devloom-regression.md      # subagent — regression verification
+│   ├── devloom-recovery.md        # subagent — autonomous failure recovery
+│   └── devloom-documenter.md      # subagent — docs update
 ├── commands/
-│   ├── devloom.md            # /devloom <prompt>
-│   ├── devloom-status.md     # /devloom-status
-│   ├── devloom-resume.md     # /devloom-resume
-│   └── devloom-init.md       # /devloom-init
-├── skills/
+│   ├── devloom.md             # /devloom <prompt>
+│   ├── devloom-init.md        # /devloom-init
+│   ├── devloom-resume.md      # /devloom-resume
+│   └── devloom-status.md      # /devloom-status
+├── skills/                        # 21 skill files across 7 categories
 │   ├── meta/       skill-discovery
 │   ├── define/     requirements-analysis
 │   ├── plan/       architecture-planning
 │   ├── build/      frontend-development, backend-development, api-design,
 │   │               incremental-development, test-driven-development
-│   ├── verify/     quality-assurance, debugging
+│   ├── verify/     quality-assurance, debugging, application-exploration,
+│   │               route-verification, form-verification, dom-inspection,
+│   │               accessibility-verification, api-verification,
+│   │               contract-validation, user-journey-generation,
+│   │               state-exploration, root-cause-analysis, repair,
+│   │               regression-verification, recovery
 │   ├── review/     code-review, security-review, performance-review
 │   └── ship/       documentation
 ├── __tests__/                    # Unit tests (Jest)

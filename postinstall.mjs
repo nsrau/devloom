@@ -96,6 +96,7 @@ const CONFIG_DIR = getConfigDir()
 const AGENTS_DIR  = resolve(CONFIG_DIR, "agents")
 const COMMANDS_DIR = resolve(CONFIG_DIR, "commands")
 const SKILLS_DIR = resolve(CONFIG_DIR, "skills")
+const PROTOCOL_DIR = resolve(CONFIG_DIR, "protocol")
 
 const AGENTS = [
   "devloom-orchestrator",
@@ -103,10 +104,22 @@ const AGENTS = [
   "devloom-architect",
   "devloom-developer",
   "devloom-qa",
+  "devloom-explorer",
+  "devloom-route-verifier",
+  "devloom-form-verifier",
+  "devloom-a11y-verifier",
+  "devloom-api-verifier",
+  "devloom-journey-agent",
+  "devloom-rca",
+  "devloom-repair",
+  "devloom-regression",
+  "devloom-recovery",
   "devloom-documenter",
 ]
 
 const COMMANDS = ["devloom", "devloom-status", "devloom-resume", "devloom-init"]
+
+const PROTOCOLS = ["orchestrator-core", "agent-contracts", "artifact-system", "verification-policy"]
 
 function main() {
   console.log("\nDevLoom -- post-install\n")
@@ -145,6 +158,16 @@ function main() {
     "Skill"
   )
 
+  console.log("\nInstalling protocol modules:")
+  ensureDir(PROTOCOL_DIR)
+  for (const name of PROTOCOLS) {
+    installFile(
+      resolve(__dirname, "protocol", `${name}.md`),
+      resolve(PROTOCOL_DIR, `${name}.md`),
+      `Protocol: ${name}`
+    )
+  }
+
   if (!installFailed) {
     console.log(`
 DevLoom installed successfully!
@@ -152,6 +175,8 @@ DevLoom installed successfully!
 Start weaving:
   /devloom Build a REST API for user management with JWT auth
   /devloom-status
+
+Protocol modules available at ~/.config/opencode/protocol/
 
 Debug mode:
   DEVLOOM_DEBUG=1 opencode @devloom-orchestrator
