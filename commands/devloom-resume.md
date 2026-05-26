@@ -1,58 +1,36 @@
 ---
-description: "Resume DevLoom from last execution point"
+description: "Resume DevLoom from saved state"
 agent: devloom-orchestrator
 subtask: false
 ---
 
-# Initialize & Dashboard Setup
+# Resume
 
 ```bash
-# Load project config — local config.json overrides global agent models
-# ALL models MUST use opencode/ API prefix (e.g. opencode/deepseek-v4-flash-free)
-if [ -f ".opencode/devloom/config.json" ]; then
-  echo "📋 Applying local model config..."
-  node -e "
-    const c = JSON.parse(require('fs').readFileSync('.opencode/devloom/config.json','utf8'));
-    const m = c.models || {};
-    for (const [agent, model] of Object.entries(m)) {
-      let finalModel = model.trim();
-      if (!finalModel.startsWith('opencode/') && !finalModel.startsWith('opencode-go/')) {
-        finalModel = 'opencode/' + finalModel;
-        console.log('  ⚠️  Added opencode/ prefix to ' + agent + ': ' + model + ' -> ' + finalModel);
-      }
-      const f = require('os').homedir() + '/.config/opencode/agents/devloom-' + agent + '.md';
-      try {
-        const fs = require('fs');
-        let content = fs.readFileSync(f, 'utf8');
-        content = content.replace(/^model:.*/m, 'model: ' + finalModel);
-        fs.writeFileSync(f, content);
-        console.log('  ' + agent + ' -> ' + finalModel);
-      } catch(e) { console.error('  Failed ' + agent + ': ' + e.message); }
-    }
-  "
-fi
-
-# Check state file
-STATE_FILE=".opencode/devloom/state.json"
-
-if [ -f "$STATE_FILE" ]; then
-  PHASE=$(grep -o '"phase":"[^"]*"' "$STATE_FILE" | cut -d'"' -f4)
-  echo "Resuming from $PHASE"
-else
-  echo "No execution state found. Use /devloom [prompt] to start new execution."
-  exit 1
-fi
+mkdir -p .opencode/devloom/project/{stories,tasks,bugs,decisions,reports}
+test -f .opencode/devloom/state.json || { echo "No execution state found."; exit 1; }
+test -f .opencode/devloom/project/board.json || { echo "Project board missing. Run /devloom-init first."; exit 1; }
+node -e "
+  const fs = require('fs');
+  const p = '.opencode/devloom/project';
+  const readJson = (f, fb) => {
+    try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return fb; }
+  };
+  const cfg = readJson(p + '/config.json', {});
+  const board = readJson(p + '/board.json', {});
+  const state = readJson(p + '/state.json', {});
+  const now = new Date().toISOString();
+  fs.writeFileSync(p + '/README.md', '# DevLoom Project Workspace\\nAll artifacts in this workspace must be written in English.\\nAI-only state files use minified JSON to reduce token usage.\\n');
+  fs.writeFileSync(p + '/config.json', JSON.stringify({ v: 1, lang: 'en', tracker: cfg.tracker === 'github' ? 'github' : 'local', gh: { enabled: !!cfg.gh?.enabled, owner: cfg.gh?.owner || '', repo: cfg.gh?.repo || '', project: cfg.gh?.project || '' }, rules: { flow: ['analysis','documentation','implementation','verification','regression','done'], tests: 'required', regression: 'required', queue: 'single', docs: 'official' } }));
+  fs.writeFileSync(p + '/board.json', JSON.stringify({ v: 1, tracker: cfg.tracker === 'github' ? 'github' : 'local', active: board.active || '', cols: { backlog: Array.isArray(board.cols?.backlog) ? board.cols.backlog : [], ready: Array.isArray(board.cols?.ready) ? board.cols.ready : [], doing: Array.isArray(board.cols?.doing) ? board.cols.doing.slice(0, 1) : (board.active ? [board.active] : []), review: Array.isArray(board.cols?.review) ? board.cols.review : [], blocked: Array.isArray(board.cols?.blocked) ? board.cols.blocked : [], done: Array.isArray(board.cols?.done) ? board.cols.done : [] }, updatedAt: now }));
+  fs.writeFileSync(p + '/state.json', JSON.stringify({ v: 1, phase: typeof state.phase === 'string' ? state.phase : 'idle', prompt: typeof state.prompt === 'string' ? state.prompt : '', ticket: typeof state.ticket === 'string' ? state.ticket : (board.active || ''), next: typeof state.next === 'string' ? state.next : 'analysis', updatedAt: now, notes: Array.isArray(state.notes) ? state.notes : [] }));
+"
 ```
 
-# Resume DevLoom Orchestration
-
-RESUME MODE ACTIVE: Execute PRE-PHASE 0 resume detection.
-
-1. Check for existing `.opencode/devloom/state.json`
-2. If found: Load phase, completedPhases, tasks.completed, requirements, plan
-3. Skip all completed phases
-4. Jump to next pending phase
-5. Resume execution from that point with existing models and configuration
-6. Do NOT run PHASE 0 (model selection) during resume
-
-Execute all remaining tasks until complete, then PHASE 3 delivery and quality gate.
+LOAD: `.opencode/devloom/state.json|.opencode/devloom/project/board.json|.opencode/devloom/project/state.json`
+MODE: Resume
+RULES:
+- skip completed phases
+- keep existing config/models
+- normalize legacy project files before resume
+- continue active/pending ticket first

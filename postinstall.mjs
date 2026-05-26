@@ -97,6 +97,7 @@ const AGENTS_DIR  = resolve(CONFIG_DIR, "agents")
 const COMMANDS_DIR = resolve(CONFIG_DIR, "commands")
 const SKILLS_DIR = resolve(CONFIG_DIR, "skills")
 const PROTOCOL_DIR = resolve(CONFIG_DIR, "protocol")
+const AI_DIR = resolve(CONFIG_DIR, "devloom-ai")
 
 const AGENTS = [
   "devloom-orchestrator",
@@ -117,9 +118,15 @@ const AGENTS = [
   "devloom-documenter",
 ]
 
-const COMMANDS = ["devloom", "devloom-status", "devloom-resume", "devloom-init"]
+const COMMANDS = ["devloom", "devloom-status", "devloom-resume", "devloom-init", "devloom-save"]
 
-const PROTOCOLS = ["orchestrator-core", "agent-contracts", "artifact-system", "verification-policy"]
+const PROTOCOLS = [
+  "orchestrator-core",
+  "agent-contracts",
+  "artifact-system",
+  "verification-policy",
+  "project-system",
+]
 
 function main() {
   console.log("\nDevLoom -- post-install\n")
@@ -127,6 +134,7 @@ function main() {
   console.log(`  Agents dir  : ${AGENTS_DIR}`)
   console.log(`  Commands dir: ${COMMANDS_DIR}`)
   console.log(`  Skills dir  : ${SKILLS_DIR}\n`)
+  console.log(`  AI dir      : ${AI_DIR}\n`)
 
   if (isDebug()) console.log("[debug] Starting DevLoom post-install")
 
@@ -156,6 +164,13 @@ function main() {
     resolve(__dirname, "skills"),
     SKILLS_DIR,
     "Skill"
+  )
+
+  console.log("\nInstalling AI DSL:")
+  installDirRecursive(
+    resolve(__dirname, ".ai"),
+    AI_DIR,
+    "AI"
   )
 
   console.log("\nInstalling protocol modules:")

@@ -40,6 +40,7 @@ DevLoom — post-install
   Config dir  : /home/you/.config/opencode
   Agents dir  : /home/you/.config/opencode/agents
   Commands dir: /home/you/.config/opencode/commands
+  AI dir      : /home/you/.config/opencode/devloom-ai
 
 Installing agents:
   - Agent: devloom-orchestrator
@@ -54,6 +55,7 @@ Installing commands:
   - Command: /devloom-status
   - Command: /devloom-resume
   - Command: /devloom-init
+  - Command: /devloom-save
 
 DevLoom installed successfully!
 ```
@@ -89,6 +91,8 @@ project without a global install:
 ```
 
 OpenCode loads it automatically when you open a session in that directory.
+On load, the plugin bootstraps `.opencode/devloom/project/` and normalizes any
+legacy DevLoom workspace files into the compact canonical format.
 
 ---
 
@@ -101,6 +105,7 @@ Start OpenCode and open the command palette by typing `/`:
 /devloom-status   → Show current weaving progress
 /devloom-resume   → Resume an interrupted execution
 /devloom-init     → Initialize a project for DevLoom
+/devloom-save     → Persist current state and pause for the next command
 ```
 
 Or check installed files directly:
@@ -215,6 +220,10 @@ Navigate to your project directory, then open OpenCode:
 cd /path/to/your/project
 opencode
 ```
+
+If this is the first time DevLoom is used in the project, or the project has an
+older DevLoom workspace, plugin startup normalizes `.opencode/devloom/project/`
+before command execution.
 
 #### Option 1 — Slash command (recommended)
 

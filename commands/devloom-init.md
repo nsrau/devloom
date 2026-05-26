@@ -1,60 +1,28 @@
 ---
-description: "DevLoom Init: start fresh execution, clearing any prior state"
+description: "DevLoom Init: reset state and bootstrap project workspace"
 agent: devloom-orchestrator
 subtask: false
 ---
 
-# Force Fresh Start
+# Init
 
 ```bash
-# Create .opencode/devloom directory if not exists
-mkdir -p .opencode/devloom
+mkdir -p .opencode/devloom/project/{stories,tasks,bugs,decisions,reports}
+rm -f .opencode/devloom/state.json .opencode/devloom/errors.md .opencode/devloom/requirements.md .opencode/devloom/plan.md
 
-# Load project config — local config.json overrides global agent models
-# ALL models MUST use opencode/ API prefix (e.g. opencode/deepseek-v4-flash-free)
-if [ -f ".opencode/devloom/config.json" ]; then
-  echo "📋 Applying local model config..."
-  node -e "
-    const c = JSON.parse(require('fs').readFileSync('.opencode/devloom/config.json','utf8'));
-    const m = c.models || {};
-    for (const [agent, model] of Object.entries(m)) {
-      let finalModel = model.trim();
-      if (!finalModel.startsWith('opencode/') && !finalModel.startsWith('opencode-go/')) {
-        finalModel = 'opencode/' + finalModel;
-        console.log('  ⚠️  Added opencode/ prefix to ' + agent + ': ' + model + ' -> ' + finalModel);
-      }
-      const f = require('os').homedir() + '/.config/opencode/agents/devloom-' + agent + '.md';
-      try {
-        const fs = require('fs');
-        let content = fs.readFileSync(f, 'utf8');
-        content = content.replace(/^model:.*/m, 'model: ' + finalModel);
-        fs.writeFileSync(f, content);
-        console.log('  ' + agent + ' -> ' + finalModel);
-      } catch(e) { console.error('  Failed ' + agent + ': ' + e.message); }
-    }
-  "
-fi
-
-# Remove any existing state to force fresh start
-rm -f .opencode/devloom/state.json
-rm -f .opencode/devloom/errors.md
-
-# Clear requirement/plan files if they exist
-rm -f .opencode/devloom/requirements.md
-rm -f .opencode/devloom/plan.md
-
-echo "🔄 Clearing prior state - starting fresh"
+node -e "
+  const fs = require('fs');
+  const p = '.opencode/devloom/project';
+  fs.writeFileSync(p + '/README.md', '# DevLoom Project Workspace\\nAll artifacts in this workspace must be written in English.\\nAI-only state files use minified JSON to reduce token usage.\\nUse local tracker by default. Use GitHub Project only with explicit user authorization.\\n');
+  fs.writeFileSync(p + '/config.json', JSON.stringify({ v: 1, lang: 'en', tracker: 'local', gh: { enabled: false, owner: '', repo: '', project: '' }, rules: { flow: ['analysis','documentation','implementation','verification','regression','done'], tests: 'required', regression: 'required', queue: 'single', docs: 'official' } }));
+  fs.writeFileSync(p + '/board.json', JSON.stringify({ v: 1, tracker: 'local', active: '', cols: { backlog: [], ready: [], doing: [], review: [], blocked: [], done: [] }, updatedAt: '' }));
+  fs.writeFileSync(p + '/state.json', JSON.stringify({ v: 1, phase: 'idle', prompt: '', ticket: '', next: 'analysis', updatedAt: '', notes: [] }));
+"
+touch .opencode/devloom/project/stories/.keep .opencode/devloom/project/tasks/.keep .opencode/devloom/project/bugs/.keep .opencode/devloom/project/decisions/.keep .opencode/devloom/project/reports/.keep
 ```
 
-# Fresh DevLoom Orchestration
+# Run
 
-$ARGUMENTS
-
-IMPORTANT: Run full workflow from PHASE 0.
-
-1. Run PHASE 0 — detect models, ask user preference, update agent files
-2. Invoke @devloom-analyst to create requirements
-3. Invoke @devloom-architect to create plan
-4. Loop through every task: developer → QA → (fix if needed) → mark [x]
-5. Invoke @devloom-documenter and run final quality gate
-6. Output DEVLOOM_DONE only when all tasks are [x] and build passes
+LOAD: `.opencode/devloom/project/config.json|board.json|state.json`
+FLOW: Analysis>Docs>Impl>Verify>Regr>Done
+RULES: EnglishOnly|SingleActive|PersistAll|TDDReq|RegrReq

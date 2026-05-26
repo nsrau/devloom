@@ -1,96 +1,103 @@
 ---
-description: "DevLoom: weave a full software feature from a single prompt — requirements, code, tests, and docs"
+description: "DevLoom: autonomous delivery from one prompt"
 agent: devloom-orchestrator
 subtask: false
 ---
 
-# Smart Resume Detection
+# Boot
 
 ```bash
-# Create .opencode/devloom directory if not exists
-mkdir -p .opencode/devloom
+mkdir -p .opencode/devloom/project/{stories,tasks,bugs,decisions,reports}
+node -e "
+  const fs = require('fs');
+  const p = '.opencode/devloom/project';
+  const readJson = (f, fb) => {
+    try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return fb; }
+  };
+  const cfg = readJson(p + '/config.json', {});
+  const board = readJson(p + '/board.json', {});
+  const state = readJson(p + '/state.json', {});
+  const now = new Date().toISOString();
+  const normalizedCfg = {
+    v: 1,
+    lang: 'en',
+    tracker: cfg.tracker === 'github' ? 'github' : 'local',
+    gh: {
+      enabled: !!cfg.gh?.enabled,
+      owner: cfg.gh?.owner || '',
+      repo: cfg.gh?.repo || '',
+      project: cfg.gh?.project || ''
+    },
+    rules: { flow: ['analysis','documentation','implementation','verification','regression','done'], tests: 'required', regression: 'required', queue: 'single', docs: 'official' }
+  };
+  const active = typeof board.active === 'string' ? board.active : '';
+  const normalizedBoard = {
+    v: 1,
+    tracker: normalizedCfg.tracker,
+    active,
+    cols: {
+      backlog: Array.isArray(board.cols?.backlog) ? board.cols.backlog : [],
+      ready: Array.isArray(board.cols?.ready) ? board.cols.ready : [],
+      doing: Array.isArray(board.cols?.doing) ? board.cols.doing.slice(0, 1) : (active ? [active] : []),
+      review: Array.isArray(board.cols?.review) ? board.cols.review : [],
+      blocked: Array.isArray(board.cols?.blocked) ? board.cols.blocked : [],
+      done: Array.isArray(board.cols?.done) ? board.cols.done : []
+    },
+    updatedAt: now
+  };
+  const normalizedState = {
+    v: 1,
+    phase: typeof state.phase === 'string' ? state.phase : 'idle',
+    prompt: typeof state.prompt === 'string' ? state.prompt : '',
+    ticket: typeof state.ticket === 'string' ? state.ticket : active,
+    next: typeof state.next === 'string' ? state.next : 'analysis',
+    updatedAt: now,
+    notes: Array.isArray(state.notes) ? state.notes : []
+  };
+  fs.writeFileSync(p + '/README.md', '# DevLoom Project Workspace\\nAll artifacts in this workspace must be written in English.\\nAI-only state files use minified JSON to reduce token usage.\\n');
+  fs.writeFileSync(p + '/config.json', JSON.stringify(normalizedCfg));
+  fs.writeFileSync(p + '/board.json', JSON.stringify(normalizedBoard));
+  fs.writeFileSync(p + '/state.json', JSON.stringify(normalizedState));
+"
 
-# Prompt sanitization: truncate and strip control characters
 export SANITIZED_PROMPT="$(node -e "
   let p = process.argv[1] || '';
   p = p.slice(0, 4000).replace(/[\x00-\x08\x0E-\x1F\x7F]/g, '');
-  const suspicious = /[\`\$\(\);\|&]/.test(p);
-  if (suspicious) console.error('⚠️  Warning: prompt contains shell metacharacters');
   process.stdout.write(p);
-" -- "$ARGUMENTS" 2>&1)"
+" -- "$ARGUMENTS")"
 
-# If sanitization produced output, use it; fallback to raw ARGUMENTS
 if [ -z "$SANITIZED_PROMPT" ] && [ -n "$ARGUMENTS" ]; then
   SANITIZED_PROMPT="$ARGUMENTS"
 fi
 
-# Load project config — local config.json overrides global agent models
-# ALL models MUST use opencode/ API prefix (e.g. opencode/deepseek-v4-flash-free)
 if [ -f ".opencode/devloom/config.json" ]; then
-  echo "📋 Applying local model config..."
+  echo "Applying local model config..."
   node -e "
     const c = JSON.parse(require('fs').readFileSync('.opencode/devloom/config.json','utf8'));
-    const m = c.models || {};
-    for (const [agent, model] of Object.entries(m)) {
-      // Ensure model has opencode/ or opencode-go/ prefix
+    for (const [agent, model] of Object.entries(c.models || {})) {
       let finalModel = model.trim();
-      if (!finalModel.startsWith('opencode/') && !finalModel.startsWith('opencode-go/')) {
-        finalModel = 'opencode/' + finalModel;
-        console.log('  ⚠️  Added opencode/ prefix to ' + agent + ': ' + model + ' -> ' + finalModel);
-      }
+      if (!finalModel.startsWith('opencode/') && !finalModel.startsWith('opencode-go/')) finalModel = 'opencode/' + finalModel;
       const f = require('os').homedir() + '/.config/opencode/agents/devloom-' + agent + '.md';
       try {
         const fs = require('fs');
         let content = fs.readFileSync(f, 'utf8');
         content = content.replace(/^model:.*/m, 'model: ' + finalModel);
         fs.writeFileSync(f, content);
-        console.log('  ' + agent + ' -> ' + finalModel);
-      } catch(e) { console.error('  Failed ' + agent + ': ' + e.message); }
+      } catch {}
     }
   "
 fi
-
-# Check if state exists
-if [ -f ".opencode/devloom/state.json" ]; then
-  PHASE=$(grep -o '"phase":"[^"]*"' .opencode/devloom/state.json | cut -d'"' -f4)
-  COMPLETED=$(grep -o '"completed":\[' .opencode/devloom/state.json | wc -l)
-  
-  # If no arguments provided, RESUME existing execution
-  if [ -z "$ARGUMENTS" ]; then
-    echo "📋 Found existing execution at phase: $PHASE"
-    echo "🔄 Resuming from saved state..."
-    
-    # Delegate to orchestrator resume logic (PRE-PHASE 0)
-    echo "RESUMING_FROM_STATE"
-  else
-    # If prompt provided, treat as new execution with same project
-    echo "ℹ️  Existing state found. Starting fresh execution with new prompt..."
-  fi
-else
-  # No prior state
-  if [ -z "$ARGUMENTS" ]; then
-    echo "❌ No prior execution found. Use: /devloom [description]"
-    echo "   Or use: /devloom init [description] to start fresh"
-    exit 1
-  fi
-  
-  echo "✨ Starting fresh DevLoom execution..."
-fi
 ```
 
-# Orchestrator Direction
+# Run
 
-$ARGUMENTS
-
-IMPORTANT:
-- Use `$SANITIZED_PROMPT` (sanitized, truncated to 4000 chars) as the user's prompt for all processing. The raw `$ARGUMENTS` is the original user input.
-- If RESUMING_FROM_STATE: Use PRE-PHASE 0 resume detection. Skip completed phases.
-- Otherwise: Run full PHASE 0 → PHASE 1 → PHASE 2 → PHASE 3 workflow.
-
-Full workflow:
-1. Run PHASE 0 — detect models, ask user preference, update agent files
-2. Invoke @devloom-analyst to create requirements
-3. Invoke @devloom-architect to create plan  
-4. Loop through every task: developer → QA → (fix if needed) → mark [x]
-5. Invoke @devloom-documenter and run final quality gate
-6. Output DEVLOOM_DONE only when all tasks are [x] and build passes
+PROMPT: `$SANITIZED_PROMPT`
+LOAD: `.opencode/devloom/project/config.json|.opencode/devloom/project/board.json|.opencode/devloom/project/state.json`
+RULES:
+- English-only artifacts
+- normalize existing project files to canonical JSONM/English format before execution
+- persist board+state every phase
+- continue pending work first unless user reprioritizes
+- one active ticket by default
+- full flow: Analysis>Docs>Impl>Verify>Regr>Done
+- DEVLOOM_DONE only when all gates pass

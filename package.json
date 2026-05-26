@@ -6,12 +6,17 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
+    ".ai",
     "dist",
     "agents",
     "commands",
+    "skills",
+    "protocol",
+    "project",
     "postinstall.mjs",
     "README.md",
-    "GUIDE.md"
+    "GUIDE.md",
+    "SECURITY.md"
   ],
   "scripts": {
     "build": "tsc",

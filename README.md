@@ -115,6 +115,10 @@ npm install && npm run build && node postinstall.mjs
 }
 ```
 
+When OpenCode opens a project that uses DevLoom, the plugin now auto-bootstraps
+`.opencode/devloom/project/` and normalizes legacy state files into the compact
+canonical format before you run any command.
+
 ---
 
 ## Usage
@@ -127,6 +131,12 @@ Check progress mid-run:
 
 ```
 /devloom-status
+```
+
+Persist current state and pause for the next user command:
+
+```
+/devloom-save
 ```
 
 Resume an interrupted execution:
@@ -259,6 +269,20 @@ DevLoom includes 20+ skill files across 7 categories guiding each agent's workfl
 
 ---
 
+## Project Workspace
+
+Every initialized project gets a persistent workspace at `.opencode/devloom/project/`.
+
+- English-only artifacts for cross-agent consistency
+- Minified JSON for AI-only state files
+- Jira-style local board with stories, tasks, bugs, decisions, and reports
+- Single active ticket by default; unfinished work is always persisted
+- Optional GitHub Project mirror only when the user explicitly enables it
+- Existing legacy project files are normalized in place on `init`, `run`, and `resume`
+- Opening OpenCode in a DevLoom project also normalizes the workspace automatically
+
+---
+
 ## Architecture Reference
 
 ```
@@ -289,6 +313,8 @@ devloom/
 │   ├── devloom-resume.md
 │   └── devloom-status.md
 ├── skills/                      # 20+ skill files across 7 categories
+├── protocol/                    # shared operating rules and contracts
+├── project/                     # project workspace standard and templates
 ├── __tests__/                   # Jest test suites
 ├── postinstall.mjs
 ├── GUIDE.md

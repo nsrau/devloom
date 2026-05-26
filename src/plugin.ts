@@ -1,10 +1,14 @@
 import { env } from "node:process"
 import type { Hooks, PluginInput } from "@opencode-ai/plugin"
+import { ensureProjectWorkspace } from "./bootstrap.js"
 
 const PLUGIN_NAME = "devloom"
 
 function createLifecycleHooks(_ctx: PluginInput): Hooks {
   const debug = env.DEVLOOM_DEBUG === "1"
+  if (typeof _ctx.directory === "string" && _ctx.directory.length > 0) {
+    ensureProjectWorkspace(_ctx.directory)
+  }
 
   const log = (message: string, data?: Record<string, unknown>) => {
     if (debug) {
