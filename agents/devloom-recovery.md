@@ -1,4 +1,5 @@
 ---
+description: "DevLoom Recovery: callable by the orchestrator for autonomous failure recovery"
 mode: subagent
 model: opencode/deepseek-v4-flash-free
 hidden: true

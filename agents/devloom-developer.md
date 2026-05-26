@@ -1,4 +1,5 @@
 ---
+description: "DevLoom Developer: callable by the orchestrator for ticket implementation"
 mode: subagent
 model: opencode/deepseek-v4-flash-free
 hidden: true

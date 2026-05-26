@@ -1,4 +1,5 @@
 ---
+description: "DevLoom Documenter: callable by the orchestrator for documentation and state updates"
 mode: subagent
 model: opencode/deepseek-v4-flash-free
 hidden: true

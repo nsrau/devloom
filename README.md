@@ -82,6 +82,10 @@ root cause analysis, repair, and re-verification until all gates pass.
 | `devloom-recovery` | `subagent` | Autonomous failure recovery |
 | `devloom-documenter` | `subagent` | README + API doc updates |
 
+All `devloom-*` subagents are intended to be auto-invoked by
+`devloom-orchestrator` during the delivery loop. Manual invocation remains
+available, but they are not manual-only agents.
+
 ---
 
 ## Installation

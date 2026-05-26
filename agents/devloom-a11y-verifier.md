@@ -1,4 +1,5 @@
 ---
+description: "DevLoom A11y Verifier: callable by the orchestrator for accessibility checks"
 mode: subagent
 model: opencode/deepseek-v4-flash-free
 hidden: true

@@ -1,4 +1,5 @@
 ---
+description: "DevLoom Architect: callable by the orchestrator for requirements to plan and tickets"
 mode: subagent
 model: opencode/deepseek-v4-flash-free
 hidden: true

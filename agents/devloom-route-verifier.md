@@ -1,4 +1,5 @@
 ---
+description: "DevLoom Route Verifier: callable by the orchestrator for route and DOM validation"
 mode: subagent
 model: opencode/deepseek-v4-flash-free
 hidden: true

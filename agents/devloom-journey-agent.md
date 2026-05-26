@@ -1,4 +1,5 @@
 ---
+description: "DevLoom Journey Agent: callable by the orchestrator for user journey execution"
 mode: subagent
 model: opencode/deepseek-v4-flash-free
 hidden: true

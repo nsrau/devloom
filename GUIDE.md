@@ -123,6 +123,10 @@ devloom-orchestrator.md
 devloom-qa.md
 ```
 
+All installed `devloom-*` subagents are callable by `devloom-orchestrator`
+during normal autonomous runs. You may invoke them manually, but they are not
+restricted to manual-only use.
+
 ---
 
 ## Configuring Models

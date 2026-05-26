@@ -28,5 +28,6 @@ SHARED:
 - DeltaCommOnly
 - JSONM for AI-only state
 - Update BOARD+PSTATE on ticket state change
+- DevLoom subagents are callable by the orchestrator and may also be invoked manually by the user
 - OfficialDocsFirst for stack-specific decisions
 - LatestStableCheck before stack-specific planning/coding

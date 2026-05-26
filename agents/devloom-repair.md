@@ -1,4 +1,5 @@
 ---
+description: "DevLoom Repair: callable by the orchestrator for minimal defect fixes"
 mode: subagent
 model: opencode/deepseek-v4-flash-free
 hidden: true

@@ -1,4 +1,5 @@
 ---
+description: "DevLoom QA: callable by the orchestrator for ticket verification and regression checks"
 mode: subagent
 model: opencode/deepseek-v4-flash-free
 hidden: true

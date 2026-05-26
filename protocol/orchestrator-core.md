@@ -25,6 +25,7 @@ RULES:
 - load BOARD+PSTATE every prompt
 - continue pending work first
 - single active ticket unless explicit override
+- orchestrator may invoke any DevLoom subagent automatically when the phase requires it
 - all artifacts EN
 - official docs + latest stable check before stack-specific plan/code
 - defect => RCA>repair>reverify
