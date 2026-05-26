@@ -126,6 +126,8 @@ devloom-qa.md
 All installed `devloom-*` subagents are callable by `devloom-orchestrator`
 during normal autonomous runs. You may invoke them manually, but they are not
 restricted to manual-only use.
+The expected behavior is delegation by default: the orchestrator routes and
+persists state, while the matching subagent executes each specialist phase.
 
 ---
 

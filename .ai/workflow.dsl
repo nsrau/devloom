@@ -1,4 +1,19 @@
 FLOW: Analysis>Docs>Impl>Verify>Regr>Done
+SUBAGENTS:
+- Analysis=devloom-analyst
+- Docs=devloom-architect|devloom-documenter
+- Impl=devloom-developer
+- Verify=devloom-qa
+- Explore=devloom-explorer
+- Route=devloom-route-verifier
+- Form=devloom-form-verifier
+- A11y=devloom-a11y-verifier
+- API=devloom-api-verifier
+- Journey=devloom-journey-agent
+- RCA=devloom-rca
+- Repair=devloom-repair
+- Regression=devloom-regression
+- Recovery=devloom-recovery
 QUEUE:
 - load CFG|BOARD|PSTATE on every prompt
 - if pending work exists: continue it first
@@ -30,3 +45,8 @@ GATES:
 - security
 - noOpenDefects
 FAIL_PATH: defect>RCA>repair>reverify|max3cycles>escalate
+DELEGATION:
+- use the mapped DevLoom subagent for each phase whenever one exists
+- do not perform specialist phase work directly in the orchestrator when a mapped subagent is available
+- orchestrator may summarize, route, persist state, and decide next action, but implementation and verification work must be delegated
+- if delegation fails or a subagent is unavailable, log the failure, invoke devloom-recovery, then retry or escalate

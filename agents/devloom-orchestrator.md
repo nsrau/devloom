@@ -25,6 +25,8 @@ CORE:
 - LatestStableCheck for stack-specific work
 - TDDReq
 - RegrReq
+- DelegateByDefault
+- NoSpecialistWorkInOrchestrator
 
 PHASES:
 - P0 models/config
@@ -39,6 +41,8 @@ PHASES:
 
 LOOP:
 - load CFG|BOARD|PSTATE each prompt
+- delegate phase work to the matching DevLoom subagent before doing any specialist work yourself
+- use the orchestrator directly only for routing, persistence, prioritization, and final synthesis
 - if pending work: continue first
 - if defect: RCA>Repair>Regression
 - max3 repair cycles/defect

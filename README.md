@@ -85,6 +85,8 @@ root cause analysis, repair, and re-verification until all gates pass.
 All `devloom-*` subagents are intended to be auto-invoked by
 `devloom-orchestrator` during the delivery loop. Manual invocation remains
 available, but they are not manual-only agents.
+The orchestrator should delegate specialist work to them by default rather
+than executing those phase tasks itself.
 
 ---
 
