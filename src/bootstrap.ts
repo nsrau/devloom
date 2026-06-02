@@ -42,6 +42,11 @@ type ProjectConfig = {
     regression: "required"
     queue: "single"
     docs: "official"
+    delegation: "required"
+    skills: "required"
+    memory: "load"
+    save: "always"
+    promptTask: "append-last"
   }
 }
 
@@ -50,6 +55,8 @@ const WORKSPACE_README = [
   "# DevLoom Project Workspace",
   "All artifacts in this workspace must be written in English.",
   "AI-only state files use minified JSON to reduce token usage.",
+  "Every new /devloom prompt must be appended as the last task in project/tasks/TODO.md before execution continues.",
+  "Default workflow: load state, inspect memory, use relevant skills, delegate to subagents, keep tickets/todos/plan updated, and save state at every phase boundary.",
   "",
 ].join("\n")
 
@@ -91,6 +98,11 @@ function normalizeConfig(value: unknown): ProjectConfig {
       regression: "required",
       queue: "single",
       docs: "official",
+      delegation: "required",
+      skills: "required",
+      memory: "load",
+      save: "always",
+      promptTask: "append-last",
     },
   }
 }

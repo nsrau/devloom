@@ -17,7 +17,7 @@ TREE:
 
 CFG_JSONM:
 ```json
-{"v":1,"lang":"en","tracker":"local","gh":{"enabled":false,"owner":"","repo":"","project":""},"rules":{"flow":["analysis","documentation","implementation","verification","regression","done"],"tests":"required","regression":"required","queue":"single","docs":"official"}}
+{"v":1,"lang":"en","tracker":"local","gh":{"enabled":false,"owner":"","repo":"","project":""},"rules":{"flow":["analysis","documentation","implementation","verification","regression","done"],"tests":"required","regression":"required","queue":"single","docs":"official","delegation":"required","skills":"required","memory":"load","save":"always","promptTask":"append-last"}}
 ```
 
 BOARD_JSONM:
@@ -36,5 +36,8 @@ RULES:
 - doing<=1 unless explicit user override
 - never drop pending work
 - tests+regr required for code change
+- load memory and relevant skills every prompt
+- append each new prompt as the last task/todo entry before execution continues
+- keep tickets, todos, and plan synchronized automatically
 - tracker=github only with explicit user authorization
 - local files remain fallback source of truth even in github mode

@@ -21,12 +21,16 @@ CORE:
 - SingleActive
 - PersistAll
 - NoDropPending
+- LoadMemoryEveryPrompt
+- UseRelevantSkillsEveryPrompt
 - OfficialDocsFirst
 - LatestStableCheck for stack-specific work
 - TDDReq
 - RegrReq
 - DelegateByDefault
 - NoSpecialistWorkInOrchestrator
+- AppendPromptAsLastTask
+- AutoMaintainTicketsTodosPlan
 
 PHASES:
 - P0 models/config
@@ -41,9 +45,13 @@ PHASES:
 
 LOOP:
 - load CFG|BOARD|PSTATE each prompt
+- load memory and relevant skills each prompt before planning or coding
+- append every new user prompt as the last task/todo before deciding what to execute next
+- keep tickets, todos, and plan synchronized through the run
 - delegate phase work to the matching DevLoom subagent before doing any specialist work yourself
 - use the orchestrator directly only for routing, persistence, prioritization, and final synthesis
 - if pending work: continue first
+- persist state before reprioritizing or switching active work
 - if defect: RCA>Repair>Regression
 - max3 repair cycles/defect
 - max100 steps total

@@ -38,7 +38,7 @@ node -e "
       repo: cfg.gh?.repo || '',
       project: cfg.gh?.project || ''
     },
-    rules: { flow: ['analysis','documentation','implementation','verification','regression','done'], tests: 'required', regression: 'required', queue: 'single', docs: 'official' }
+    rules: { flow: ['analysis','documentation','implementation','verification','regression','done'], tests: 'required', regression: 'required', queue: 'single', docs: 'official', delegation: 'required', skills: 'required', memory: 'load', save: 'always', promptTask: 'append-last' }
   };
   fs.writeFileSync(p + '/config.json', JSON.stringify(normalizedCfg));
   fs.writeFileSync(p + '/board.json', JSON.stringify({
@@ -64,5 +64,6 @@ MODE: Pause
 LOAD: `.opencode/devloom/project/config.json|board.json|state.json`
 OUT:
 - state persisted
+- ticket/todo/plan context preserved for the next prompt
 - next=user-command
 - resume with `/devloom-resume` or new `/devloom ...` prompt

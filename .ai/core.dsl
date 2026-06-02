@@ -17,6 +17,8 @@ RULES:
 - SingleActive
 - PersistAll
 - NoDropPending
+- LoadMemoryEveryPrompt
+- UseRelevantSkillsEveryPrompt
 - OfficialDocsFirst
 - LatestStableCheck for stack-specific work
 - TDDReq for code change
@@ -24,5 +26,8 @@ RULES:
 - NoScopeCreep
 - SecureByDefault
 - DeltaCommOnly
+- AppendPromptAsLastTask
+- AutoMaintainTicketsTodosPlan
+- DelegateByDefault
 - ShortStableKeys in JSONM
 JSON_KEYS: v|id|type|title|status|ac|deps|files|tests|cols|ts|ctx|next

@@ -13,6 +13,7 @@ describe("DevLoom operating standard", () => {
     const protocol = read("protocol/project-system.md")
     expect(protocol).toContain("EN")
     expect(protocol).toContain("tests+regr required")
+    expect(protocol).toContain("append each new prompt as the last task/todo")
     expect(read("protocol/agent-contracts.md")).toContain("LatestStableCheck")
   })
 
@@ -28,6 +29,7 @@ describe("DevLoom operating standard", () => {
     expect(initCommand).toContain("mkdir -p .opencode/devloom/project")
     expect(initCommand).toContain("board.json")
     expect(initCommand).toContain("tracker: 'local'")
+    expect(initCommand).toContain("tasks/TODO.md")
   })
 
   test("main command references board persistence", () => {
@@ -35,6 +37,7 @@ describe("DevLoom operating standard", () => {
     expect(command).toContain(".opencode/devloom/project/board.json")
     expect(command).toContain("English-only")
     expect(command).toContain("normalize existing project files")
+    expect(command).toContain("append every prompt as the last task/todo")
   })
 
   test("save command persists state and pauses", () => {

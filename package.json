@@ -1,6 +1,6 @@
 {
   "name": "devloom",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "DevLoom – Autonomous Development Weaver for OpenCode. Transforms a single prompt into fully tested, documented software.",
   "type": "module",
   "main": "dist/index.js",

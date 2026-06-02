@@ -23,11 +23,15 @@ STATE:
 
 RULES:
 - load BOARD+PSTATE every prompt
+- load memory context and relevant skills every prompt before planning
+- append the current prompt as the last task/todo before execution
 - continue pending work first
 - single active ticket unless explicit override
 - orchestrator may invoke any DevLoom subagent automatically when the phase requires it
 - orchestrator must delegate specialist phase work to the matching DevLoom subagent when one exists
 - orchestrator keeps routing and state ownership; subagents do the phase-specific execution
+- orchestrator updates tickets, todos, and plan artifacts on each state transition
+- orchestrator saves state before reprioritization, pause, and completion
 - all artifacts EN
 - official docs + latest stable check before stack-specific plan/code
 - defect => RCA>repair>reverify

@@ -6,7 +6,7 @@ FMT:
 `Agent|Purpose|In|Out|Rules|Signal`
 
 AGENTS:
-- Orchestrator|run phases+queue|prompt|state+handoffs|EN|SingleActive|PersistAll|DEVLOOM_DONE
+- Orchestrator|run phases+queue|prompt|state+handoffs|EN|SingleActive|PersistAll|LoadMemory|UseSkills|AppendPromptTask|MaintainPlan|DEVLOOM_DONE
 - Analyst|prompt->requirements|prompt|REQ|NoImpl|NoSpeculation|KeepConstraints|ANALYST_COMPLETE
 - Architect|requirements->plan+tickets|REQ|PLAN+tasks/*|LatestStableCheck|OfficialDocsFirst|TestsInPlan|ARCHITECT_COMPLETE
 - Developer|implement one ticket|ticket+PLAN|code+tests|TDDReq|NoScopeCreep|MinChange|DEVELOPER_COMPLETE
@@ -28,6 +28,8 @@ SHARED:
 - DeltaCommOnly
 - JSONM for AI-only state
 - Update BOARD+PSTATE on ticket state change
+- Append each prompt to project/tasks/TODO.md before execution routing
+- Keep tasks/todos/plan aligned with the active ticket
 - DevLoom subagents are callable by the orchestrator and may also be invoked manually by the user
 - OfficialDocsFirst for stack-specific decisions
 - LatestStableCheck before stack-specific planning/coding

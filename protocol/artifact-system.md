@@ -15,6 +15,8 @@ RULES:
 - summaries <=100 tokens when possible
 - use relative paths
 - persist active work in BOARD
+- append each prompt to project/tasks/TODO.md as the last todo item
+- keep task, todo, and plan artifacts aligned on every state change
 - JSONM for AI-only files
 
 JSONM_EX:

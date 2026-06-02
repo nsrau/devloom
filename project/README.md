@@ -7,6 +7,10 @@ GOALS:
 - JSONM for AI-only state
 - SingleActive queue
 - Persist pending work
+- Load memory every prompt
+- Use relevant skills every prompt
+- Append each prompt as the last task/todo
+- Keep tickets/todos/plan in sync
 - Tests+Regr required
 - Local tracker default
 - GitHub Project mirror only with explicit authorization

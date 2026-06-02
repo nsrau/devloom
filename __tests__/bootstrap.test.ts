@@ -20,7 +20,10 @@ describe("ensureProjectWorkspace", () => {
     const result = ensureProjectWorkspace(root)
 
     expect(existsSync(join(root, ".opencode", "devloom", "project", "config.json"))).toBe(true)
+    expect(existsSync(join(root, ".opencode", "devloom", "project", "tasks", "TODO.md"))).toBe(false)
     expect(result.config.lang).toBe("en")
+    expect(result.config.rules.delegation).toBe("required")
+    expect(result.config.rules.promptTask).toBe("append-last")
     expect(result.board.cols.doing).toEqual([])
     expect(result.state.next).toBe("analysis")
   })
@@ -45,5 +48,6 @@ describe("ensureProjectWorkspace", () => {
     expect(result.state.ticket).toBe("TASK-9")
     expect(result.state.notes).toEqual(["n1"])
     expect(readFileSync(join(projectRoot, "README.md"), "utf8")).toContain("written in English")
+    expect(readFileSync(join(projectRoot, "README.md"), "utf8")).toContain("Every new /devloom prompt must be appended")
   })
 })

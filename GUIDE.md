@@ -266,6 +266,9 @@ preference (Free or Go tier), and assigns models per agent role.
 The Analyst explores your codebase and writes `.opencode/devloom/requirements.md`.
 The Architect reads the requirements and writes `.opencode/devloom/plan.md`
 with an ordered, dependency-resolved task list.
+Before phase routing, the orchestrator appends the current user prompt as the
+last item in `.opencode/devloom/project/tasks/TODO.md`, loads relevant memory
+and skills, and keeps ticket/todo/plan artifacts synchronized.
 
 **Phase 2 — Implementation & QA Loop**
 

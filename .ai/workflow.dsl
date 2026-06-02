@@ -16,6 +16,9 @@ SUBAGENTS:
 - Recovery=devloom-recovery
 QUEUE:
 - load CFG|BOARD|PSTATE on every prompt
+- load memory and relevant skills on every prompt before planning new work
+- append the current user prompt as the last task/todo before routing execution
+- create or update tickets, todos, and plan entries automatically for every prompt
 - if pending work exists: continue it first
 - if user reprioritizes: persist old active, then switch
 - doing<=1 unless explicit override
@@ -49,4 +52,6 @@ DELEGATION:
 - use the mapped DevLoom subagent for each phase whenever one exists
 - do not perform specialist phase work directly in the orchestrator when a mapped subagent is available
 - orchestrator may summarize, route, persist state, and decide next action, but implementation and verification work must be delegated
+- orchestrator must keep task/todo/plan state current before and after each delegated phase
+- orchestrator must save state at every phase boundary, before reprioritization, and before pause/finish
 - if delegation fails or a subagent is unavailable, log the failure, invoke devloom-recovery, then retry or escalate
