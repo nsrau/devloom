@@ -135,7 +135,7 @@ persists state, while the matching subagent executes each specialist phase.
 
 ### Default (no config)
 
-All agents default to `opencode/deepseek-v4-flash-free` — the fastest free model.
+All agents default to `opencode/minimax-m3-free` — the fastest free model.
 
 ### Per-project override (recommended)
 
@@ -145,11 +145,11 @@ Create `.opencode/devloom/config.json` in your project root:
 {
   "models": {
     "orchestrator": "opencode/big-pickle",
-    "analyst": "opencode/deepseek-v4-flash-free",
-    "architect": "opencode/deepseek-v4-flash-free",
-    "developer": "opencode/deepseek-v4-flash-free",
-    "qa": "opencode/deepseek-v4-flash-free",
-    "documenter": "opencode/deepseek-v4-flash-free"
+    "analyst": "opencode/minimax-m3-free",
+    "architect": "opencode/minimax-m3-free",
+    "developer": "opencode/minimax-m3-free",
+    "qa": "opencode/minimax-m3-free",
+    "documenter": "opencode/minimax-m3-free"
   }
 }
 ```
@@ -164,7 +164,7 @@ All models MUST use the `opencode/` or `opencode-go/` prefix:
 
 | Correct | Wrong |
 |---|---|
-| `opencode/deepseek-v4-flash-free` | `deepseek-v4-flash-free` |
+| `opencode/minimax-m3-free` | `minimax-m2.5-free` |
 | `opencode-go/deepseek-v4-pro` | `deepseek-v4-pro` |
 
 If you forget the prefix, DevLoom adds it automatically and logs a warning.
@@ -181,8 +181,8 @@ then assigns the best available model per agent role.
 
 | Model string |
 |---|
-| `opencode/deepseek-v4-flash-free` |
-| `opencode/minimax-m2.5-free` |
+| `opencode/minimax-m3-free` |
+| `opencode/minimax-m3-free` |
 | `opencode/nemotron-3-super-free` |
 | `opencode/big-pickle` |
 
@@ -210,7 +210,7 @@ Run `opencode models` to see what's currently available in your environment.
 Edit the agent files at `~/.config/opencode/agents/` directly:
 
 ```bash
-sed -i 's|^model:.*|model: opencode/deepseek-v4-flash-free|' \
+sed -i 's|^model:.*|model: opencode/minimax-m3-free|' \
   ~/.config/opencode/agents/devloom-*.md
 ```
 

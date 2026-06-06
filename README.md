@@ -244,11 +244,11 @@ Create `.opencode/devloom/config.json`:
 {
   "models": {
     "orchestrator": "opencode/big-pickle",
-    "analyst": "opencode/deepseek-v4-flash-free",
-    "architect": "opencode/deepseek-v4-flash-free",
-    "developer": "opencode/deepseek-v4-flash-free",
-    "qa": "opencode/deepseek-v4-flash-free",
-    "documenter": "opencode/deepseek-v4-flash-free"
+    "analyst": "opencode/minimax-m3-free",
+    "architect": "opencode/minimax-m3-free",
+    "developer": "opencode/minimax-m3-free",
+    "qa": "opencode/minimax-m3-free",
+    "documenter": "opencode/minimax-m3-free"
   }
 }
 ```

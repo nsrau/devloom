@@ -1,7 +1,7 @@
 ---
 description: "DevLoom Explorer: callable by the orchestrator for application surface discovery"
 mode: subagent
-model: opencode/deepseek-v4-flash-free
+model: opencode/minimax-m3-free
 hidden: true
 permission:
   edit: allow

@@ -1,7 +1,7 @@
 ---
 description: "DevLoom API Verifier: callable by the orchestrator for endpoint validation"
 mode: subagent
-model: opencode/deepseek-v4-flash-free
+model: opencode/minimax-m3-free
 hidden: true
 permission:
   edit: allow

@@ -1,7 +1,7 @@
 ---
 description: "DevLoom Analyst: callable by the orchestrator for prompt to requirements analysis"
 mode: subagent
-model: opencode/deepseek-v4-flash-free
+model: opencode/minimax-m3-free
 hidden: true
 permission:
   edit: allow
