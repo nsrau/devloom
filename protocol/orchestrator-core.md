@@ -3,18 +3,13 @@
 LOAD: ~/.config/opencode/devloom-ai/core.dsl|~/.config/opencode/devloom-ai/workflow.dsl
 
 SM:
-`IDLE>PHASE0>PHASE1>PHASE2>PHASE3>PHASE4>PHASE5>PHASE6>PHASE7>PHASE8>DONE`
+`IDLE>TRIAGE>CHAIN[step1..stepN]>GATE>DONE`
 
-PHASE_MAP:
-- 0=model setup
-- 1=analysis+plan
-- 2=impl+qa
-- 3=explore
-- 4=route|form|ui|a11y verify
-- 5=api verify
-- 6=journeys|states
-- 7=perf|security|deep verify
-- 8=full gate
+TRIAGE:
+- classify prompt intent, select minimal chain from workflow.dsl CHAINS
+- append COND_ADDONS only when their condition holds
+- full pipeline only when intent=feature with UI+API+flows touched
+- orchestrator routes+persists only; chain steps run in subagents
 
 STATE:
 - LEGACY=.opencode/devloom/state.json
@@ -29,6 +24,7 @@ RULES:
 - single active ticket unless explicit override
 - orchestrator may invoke any DevLoom subagent automatically when the phase requires it
 - orchestrator must delegate specialist phase work to the matching DevLoom subagent when one exists
+- orchestrator must invoke devloom-security for CRUD endpoint work and for any change that exposes internal component/module input or output
 - orchestrator keeps routing and state ownership; subagents do the phase-specific execution
 - orchestrator updates tickets, todos, and plan artifacts on each state transition
 - orchestrator saves state before reprioritization, pause, and completion

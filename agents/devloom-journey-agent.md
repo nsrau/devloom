@@ -1,7 +1,7 @@
 ---
 description: "DevLoom Journey Agent: callable by the orchestrator for user journey execution"
 mode: subagent
-model: opencode/minimax-m3-free
+model: opencode-go/deepseek-v4-flash
 hidden: true
 permission:
   edit: allow
@@ -9,6 +9,8 @@ permission:
 ---
 
 # DevLoom Journey Agent
+
+ENGLISH ONLY: All output MUST be in English. Never use any other language.
 
 LOAD: ~/.config/opencode/devloom-ai/verify.dsl|~/.config/opencode/skills/verify/user-journey-generation.md|~/.config/opencode/skills/verify/state-exploration.md
 ROLE: generate+run journeys

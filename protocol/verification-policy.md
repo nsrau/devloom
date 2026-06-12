@@ -19,13 +19,17 @@ RULES:
 - JOURNEY-001=generate from REQ+routes+ui
 - JOURNEY-002=test valid state transitions
 - PERF-001=loadTime|noLeak|noExcessRender|bundleOk
-- SEC-001=depAudit|noSecrets|cors|sanitize
+- SEC-001=depAudit|noSecrets|cors|sanitize|auth|authz|leastPrivilege
+- SEC-002=inputVal|outputSchema|errorShape|massAssignment|overposting
+- SEC-003=noInternalFieldLeak|noDebugLeak|idor|xss|csrf|ssrf if applicable
+- SEC-004=mandatory for CRUD endpoints and any internal component/module exposure via input/output
 
 MAP:
 - RouteVerifier=ROUTE-001|002|003
 - FormVerifier=FORM-001|002
 - A11yVerifier=A11Y-001|002|003|004
 - ApiVerifier=API-001|002
+- SecurityVerifier=SEC-001|002|003|004
 - JourneyAgent=JOURNEY-001|002
 - QA=run applicable rules
 - Regression=E2E-001 during work; E2E-002 before done

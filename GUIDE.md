@@ -135,11 +135,73 @@ persists state, while the matching subagent executes each specialist phase.
 
 ### Default (no config)
 
-All agents default to `opencode/minimax-m3-free` — the fastest free model.
+All agents default to `opencode/minimax-m3-free` — a capable free model.
 
-### Per-project override (recommended)
+### Model Routing — Three Profiles
 
-Create `.opencode/devloom/config.json` in your project root:
+DevLoom provides three model profiles that trade off quality vs cost:
+
+| Profile | Use case | Tier |
+|---|---|---|
+| `go-premium` | Production-grade builds, maximum quality | Go (paid) |
+| `go-economy` | Good quality at lower cost | Go (paid) |
+| `free` | Zero-cost experimentation | Free |
+
+The profile determines which model is assigned to each agent role. Premium roles (architect, QA, verifiers) get stronger models; supporting roles (recovery) get faster/cheaper ones.
+
+#### go-premium (max quality — default is go-flash)
+
+```json
+{
+  "models": {
+    "orchestrator": "opencode-go/glm-5.1",
+    "analyst": "opencode-go/glm-5.1",
+    "architect": "opencode-go/glm-5.1",
+    "developer": "opencode-go/kimi-k2.6",
+    "qa": "opencode-go/deepseek-v4-pro",
+    "explorer": "opencode-go/kimi-k2.6",
+    "route-verifier": "opencode-go/deepseek-v4-pro",
+    "form-verifier": "opencode-go/deepseek-v4-pro",
+    "a11y-verifier": "opencode-go/glm-5.1",
+    "api-verifier": "opencode-go/deepseek-v4-pro",
+    "security": "opencode-go/deepseek-v4-pro",
+    "journey-agent": "opencode-go/glm-5.1",
+    "rca": "opencode-go/deepseek-v4-pro",
+    "repair": "opencode-go/kimi-k2.6",
+    "regression": "opencode-go/deepseek-v4-pro",
+    "recovery": "opencode-go/deepseek-v4-flash",
+    "documenter": "opencode-go/glm-5.1"
+  }
+}
+```
+
+#### go-economy
+
+```json
+{
+  "models": {
+    "orchestrator": "opencode-go/deepseek-v4-pro",
+    "analyst": "opencode-go/qwen3.6-plus",
+    "architect": "opencode-go/kimi-k2.6",
+    "developer": "opencode-go/kimi-k2.6",
+    "qa": "opencode-go/deepseek-v4-pro",
+    "explorer": "opencode-go/deepseek-v4-pro",
+    "route-verifier": "opencode-go/deepseek-v4-pro",
+    "form-verifier": "opencode-go/deepseek-v4-pro",
+    "a11y-verifier": "opencode-go/deepseek-v4-pro",
+    "api-verifier": "opencode-go/deepseek-v4-pro",
+    "security": "opencode-go/deepseek-v4-pro",
+    "journey-agent": "opencode-go/deepseek-v4-pro",
+    "rca": "opencode-go/deepseek-v4-pro",
+    "repair": "opencode-go/kimi-k2.6",
+    "regression": "opencode-go/deepseek-v4-pro",
+    "recovery": "opencode-go/deepseek-v4-flash",
+    "documenter": "opencode-go/qwen3.6-plus"
+  }
+}
+```
+
+#### free
 
 ```json
 {
@@ -149,14 +211,27 @@ Create `.opencode/devloom/config.json` in your project root:
     "architect": "opencode/minimax-m3-free",
     "developer": "opencode/minimax-m3-free",
     "qa": "opencode/minimax-m3-free",
+    "explorer": "opencode/minimax-m3-free",
+    "route-verifier": "opencode/minimax-m3-free",
+    "form-verifier": "opencode/minimax-m3-free",
+    "a11y-verifier": "opencode/minimax-m3-free",
+    "api-verifier": "opencode/minimax-m3-free",
+    "security": "opencode/minimax-m3-free",
+    "journey-agent": "opencode/minimax-m3-free",
+    "rca": "opencode/minimax-m3-free",
+    "repair": "opencode/minimax-m3-free",
+    "regression": "opencode/minimax-m3-free",
+    "recovery": "opencode/minimax-m3-free",
     "documenter": "opencode/minimax-m3-free"
   }
 }
 ```
 
-Every DevLoom command (`/devloom`, `/devloom-init`, `/devloom-resume`) reads
-this file before invoking the orchestrator and applies the models to the
-global agent files. **Local config always wins.**
+### Per-project override
+
+Create `.opencode/devloom/config.json` in your project root with your chosen profile above. Every DevLoom command (`/devloom`, `/devloom-init`, `/devloom-resume`) reads this file before invoking the orchestrator and applies the models to the global agent files. Local config always wins.
+
+You can also override individual agents by providing a partial `models` map — only specified roles are changed, others keep their existing assignment.
 
 ### Prefix requirement
 
@@ -171,9 +246,7 @@ If you forget the prefix, DevLoom adds it automatically and logs a warning.
 
 ### First-run interactive setup
 
-If no `config.json` exists, Phase 0 detects available models (`opencode models`),
-asks whether to use **Free** (`opencode/`) or **Go** (`opencode-go/`) tier,
-then assigns the best available model per agent role.
+If no `config.json` exists, Phase 0 detects available models (`opencode models`), asks which profile to use (**go-premium**, **go-economy**, or **free**), then assigns models per agent role matching the selected profile.
 
 ### Available models
 
@@ -181,38 +254,54 @@ then assigns the best available model per agent role.
 
 | Model string |
 |---|
-| `opencode/minimax-m3-free` |
-| `opencode/minimax-m3-free` |
-| `opencode/nemotron-3-super-free` |
 | `opencode/big-pickle` |
+| `opencode/deepseek-v4-flash-free` |
+| `opencode/mimo-v2.5-free` |
+| `opencode/nemotron-3-ultra-free` |
 
-**Go tier** (`opencode-go/` — higher quality):
+**Go tier** (`opencode-go/` — higher quality, paid):
 
 | Model string |
 |---|
-| `opencode-go/deepseek-v4-pro` |
-| `opencode-go/deepseek-v4-flash` |
-| `opencode-go/kimi-k2.5` |
-| `opencode-go/kimi-k2.6` |
 | `opencode-go/glm-5` |
 | `opencode-go/glm-5.1` |
+| `opencode-go/kimi-k2.5` |
+| `opencode-go/kimi-k2.6` |
+| `opencode-go/deepseek-v4-pro` |
+| `opencode-go/deepseek-v4-flash` |
 | `opencode-go/minimax-m2.5` |
 | `opencode-go/minimax-m2.7` |
+| `opencode-go/minimax-m3` |
 | `opencode-go/mimo-v2.5` |
 | `opencode-go/mimo-v2.5-pro` |
-| `opencode-go/qwen3.5-plus` |
 | `opencode-go/qwen3.6-plus` |
+| `opencode-go/qwen3.7-plus` |
+| `opencode-go/qwen3.7-max` |
 
-Run `opencode models` to see what's currently available in your environment.
+### Checking available models
+
+Run `opencode models` in your terminal to see which models are currently available in your environment. Available models vary by region and subscription tier.
 
 ### Global override (advanced)
 
 Edit the agent files at `~/.config/opencode/agents/` directly:
 
 ```bash
-sed -i 's|^model:.*|model: opencode/minimax-m3-free|' \
+sed -i 's|^model:.*|model: opencode-go/deepseek-v4-pro|' \
   ~/.config/opencode/agents/devloom-*.md
 ```
+
+### Updating global agents after config change
+
+After modifying `.opencode/devloom/config.json` (e.g., switching profiles or overriding individual models), run `/devloom-init` or start a new weave with `/devloom`. DevLoom re-reads the config and updates the global agent files at `~/.config/opencode/agents/devloom-*.md` automatically.
+
+If you prefer a manual refresh:
+
+```bash
+node $(npm root -g)/devloom/postinstall.mjs
+```
+
+This re-installs agent files from the installed package. Then start a weave to apply your config models.
 
 ---
 
@@ -253,7 +342,12 @@ opencode run "/devloom Add OpenTelemetry tracing to all HTTP handlers"
 
 ### What happens after you submit the prompt
 
-DevLoom works through phases automatically:
+The orchestrator first **triages** the prompt and picks the minimal agent chain
+for the intent (bug → rca>repair>regression; docs → architect>documenter;
+small change → developer>qa; etc. — see `workflow.dsl` CHAINS). Verifier
+agents are added only when the work touches their surface (UI, API, CRUD/data
+exposure, user flows). The full sequence below runs only for a feature that
+touches all surfaces:
 
 **Phase 0 — Model Setup**
 
@@ -317,6 +411,9 @@ models, and every state transition is tested (including invalid transitions).
 
 Performance checks (build size, load time) and security checks (dependency
 audit, secret scanning, OWASP patterns) are run against the full application.
+The `devloom-security` subagent is mandatory whenever a CRUD endpoint changes
+or when a component/module starts exposing internal data through input or
+output boundaries.
 
 **Phase 8 — Acceptance Gate (Final)**
 
@@ -481,9 +578,17 @@ node $(npm root -g)/devloom/postinstall.mjs
 
 ### ProviderModelNotFoundError
 
-An agent file has a model string without the `opencode/` prefix. DevLoom
-auto-fixes this when loading `config.json`, but if you edit files manually
-always use the full prefix.
+This error means an agent file references a model that is not available in your environment. Common causes:
+
+1. **Wrong prefix** — model string missing `opencode/` or `opencode-go/`. DevLoom auto-fixes this when loading `config.json`.
+2. **Model not available** — some Go models may not be available in your region or subscription. Run `opencode models` to list available models.
+3. **Outdated agent files** — global agent files may reference a model that no longer exists. Re-run the installer and apply config:
+
+```bash
+node $(npm root -g)/devloom/postinstall.mjs
+```
+
+Then update your `.opencode/devloom/config.json` with models from the available list and start a new weave.
 
 ### The weave stops before DEVLOOM_DONE
 
@@ -607,6 +712,7 @@ devloom/
 │   ├── devloom-form-verifier.md   # subagent — form validation testing
 │   ├── devloom-a11y-verifier.md   # subagent — accessibility audit
 │   ├── devloom-api-verifier.md    # subagent — API endpoint verification
+│   ├── devloom-security.md        # subagent — CRUD + exposure security review
 │   ├── devloom-journey-agent.md   # subagent — user journeys + state exploration
 │   ├── devloom-rca.md             # subagent — root cause analysis
 │   ├── devloom-repair.md          # subagent — defect resolution

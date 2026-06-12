@@ -1,7 +1,7 @@
 ---
 description: "DevLoom Form Verifier: callable by the orchestrator for form validation checks"
 mode: subagent
-model: opencode/minimax-m3-free
+model: opencode-go/deepseek-v4-flash
 hidden: true
 permission:
   edit: allow
@@ -9,6 +9,8 @@ permission:
 ---
 
 # DevLoom Form Verifier
+
+ENGLISH ONLY: All output MUST be in English. Never use any other language.
 
 LOAD: ~/.config/opencode/devloom-ai/verify.dsl|~/.config/opencode/skills/verify/form-verification.md
 ROLE: verify forms

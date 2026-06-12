@@ -1,4 +1,29 @@
-FLOW: Analysis>Docs>Impl>Verify>Regr>Done
+FLOW: Triage>MinimalChain>Verify>Regr>Done
+TRIAGE: classify intent first|run only matching chain+conditions|never full pipeline by default
+CHAINS:
+- feature=analyst>architect>developer>qa>documenter
+- bug=rca>repair>regression
+- refactor=architect>developer>qa>regression
+- small(<=2files,noNewBehavior)=developer>qa
+- docsOnly=architect>documenter
+- specOnly=analyst
+- planOnly=analyst?>architect
+- explore=explorer
+- verifyOnly=qa+applicableVerifiers
+COND_ADDONS:
+- UI=>route-verifier+form-verifier?+a11y-verifier
+- API=>api-verifier
+- CRUD|exposure=>security(mandatory)
+- userFlow=>journey-agent
+DEPS:
+- developer requires plan for non-trivial work
+- documenter only after verified impl
+- regression always after repair
+ANTILOOP:
+- no orchestrator self-delegation
+- no subagent calls orchestrator
+- every orchestrator turn: task()|DEVLOOM_DONE|BLOCKED+reason
+- same agent+same input max2 then recovery
 SUBAGENTS:
 - Analysis=devloom-analyst
 - Docs=devloom-architect|devloom-documenter
@@ -9,6 +34,7 @@ SUBAGENTS:
 - Form=devloom-form-verifier
 - A11y=devloom-a11y-verifier
 - API=devloom-api-verifier
+- Security=devloom-security
 - Journey=devloom-journey-agent
 - RCA=devloom-rca
 - Repair=devloom-repair
@@ -51,6 +77,7 @@ FAIL_PATH: defect>RCA>repair>reverify|max3cycles>escalate
 DELEGATION:
 - use the mapped DevLoom subagent for each phase whenever one exists
 - do not perform specialist phase work directly in the orchestrator when a mapped subagent is available
+- run devloom-security whenever work adds/changes CRUD endpoints or exposes internal component/module data through inputs or outputs
 - orchestrator may summarize, route, persist state, and decide next action, but implementation and verification work must be delegated
 - orchestrator must keep task/todo/plan state current before and after each delegated phase
 - orchestrator must save state at every phase boundary, before reprioritization, and before pause/finish

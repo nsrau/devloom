@@ -1,14 +1,36 @@
 import { env } from "node:process"
+import { existsSync } from "node:fs"
+import { join } from "node:path"
 import type { Hooks, PluginInput } from "@opencode-ai/plugin"
 import { ensureProjectWorkspace } from "./bootstrap.js"
+import {
+  ORCHESTRATOR_AGENT,
+  buildGuardText,
+  clampToolOutput,
+  isBlockedOrchestratorCall,
+  readStateSummary,
+} from "./guard.js"
 
 const PLUGIN_NAME = "devloom"
 
+const COMPACTION_CONTEXT = [
+  "DevLoom is active in this project. The summary MUST preserve:",
+  '(1) routing rule — all code work is delegated via task(subagent:"devloom-orchestrator");',
+  "(2) current pipeline state from .opencode/devloom/project/state.json and board.json (phase, active ticket, next step);",
+  "(3) pending pipeline phases and open defects.",
+].join(" ")
+
 function createLifecycleHooks(_ctx: PluginInput): Hooks {
   const debug = env.DEVLOOM_DEBUG === "1"
-  if (typeof _ctx.directory === "string" && _ctx.directory.length > 0) {
-    ensureProjectWorkspace(_ctx.directory)
+  const rootDir = typeof _ctx.directory === "string" ? _ctx.directory : ""
+  // Only normalize an existing workspace; first-time creation belongs to /devloom
+  // so globally-loaded plugins don't litter unrelated repos.
+  if (rootDir.length > 0 && existsSync(join(rootDir, ".opencode", "devloom"))) {
+    ensureProjectWorkspace(rootDir)
   }
+
+  const agentBySession = new Map<string, string>()
+  let partCounter = 0
 
   const log = (message: string, data?: Record<string, unknown>) => {
     if (debug) {
@@ -28,8 +50,44 @@ function createLifecycleHooks(_ctx: PluginInput): Hooks {
       })
     },
 
-    "tool.execute.before": async ({ tool, sessionID }) => {
+    "chat.message": async (input, output) => {
+      if (input.agent) agentBySession.set(input.sessionID, input.agent)
+      const guard = buildGuardText(input.agent, readStateSummary(rootDir))
+      log("Message received", { agent: input.agent, sessionID: input.sessionID, guarded: !!guard })
+      if (!guard) return
+      output.parts.push({
+        id: `prt_devloom_${Date.now().toString(36)}_${(partCounter++).toString(36)}`,
+        sessionID: output.message?.sessionID ?? input.sessionID,
+        messageID: output.message?.id ?? input.messageID ?? "",
+        type: "text",
+        text: guard,
+        synthetic: true,
+      })
+    },
+
+    "experimental.chat.system.transform": async (input, output) => {
+      const agent = input.sessionID ? agentBySession.get(input.sessionID) : undefined
+      const guard = buildGuardText(agent, readStateSummary(rootDir))
+      if (guard) output.system.push(guard)
+    },
+
+    "experimental.session.compacting": async (_input, output) => {
+      log("Compaction starting — injecting DevLoom preservation context")
+      output.context.push(COMPACTION_CONTEXT)
+    },
+
+    "tool.execute.before": async ({ tool, sessionID }, output) => {
       log("Tool executing", { tool, sessionID })
+      if (
+        agentBySession.get(sessionID) === ORCHESTRATOR_AGENT &&
+        isBlockedOrchestratorCall(tool, output.args)
+      ) {
+        throw new Error(
+          "DevLoom guard: the orchestrator must not modify project files directly. " +
+            'Delegate via task(subagent:"devloom-developer" | "devloom-repair" | ...). ' +
+            "Only state writes under .opencode/devloom/ are allowed."
+        )
+      }
     },
 
     "tool.execute.after": async ({ tool, sessionID }, output) => {
@@ -39,6 +97,14 @@ function createLifecycleHooks(_ctx: PluginInput): Hooks {
         title: output?.title,
         outputLength: output?.output?.length ?? 0,
       })
+      // The orchestrator session lives for the whole pipeline; unclamped sub-agent
+      // outputs are the main driver of context overflow there.
+      if (
+        agentBySession.get(sessionID) === ORCHESTRATOR_AGENT &&
+        typeof output?.output === "string"
+      ) {
+        output.output = clampToolOutput(output.output)
+      }
     },
   }
 }

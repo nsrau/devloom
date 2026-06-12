@@ -1,7 +1,7 @@
 ---
 description: "DevLoom Explorer: callable by the orchestrator for application surface discovery"
 mode: subagent
-model: opencode/minimax-m3-free
+model: opencode-go/deepseek-v4-flash
 hidden: true
 permission:
   edit: allow
@@ -9,6 +9,8 @@ permission:
 ---
 
 # DevLoom Explorer
+
+ENGLISH ONLY: All output MUST be in English. Never use any other language.
 
 LOAD: ~/.config/opencode/devloom-ai/verify.dsl|~/.config/opencode/skills/verify/application-exploration.md
 ROLE: discover app surface

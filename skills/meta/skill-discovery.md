@@ -7,6 +7,6 @@ LOAD: ~/.config/opencode/devloom-ai/core.dsl|~/.config/opencode/devloom-ai/workf
 DO:
 - detect domain keywords
 - load all matching skills
-- enforce core flow: Analysis>Docs>Impl>Verify>Regr>Done
+- enforce core flow: Triage>MinimalChain>Verify>Regr>Done
 - require OfficialDocsFirst + LatestStableCheck for stack-specific work
 OUT: ActivatedSkills=<list>

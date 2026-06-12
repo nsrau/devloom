@@ -1,12 +1,14 @@
 ---
 description: "DevLoom Analyst: callable by the orchestrator for prompt to requirements analysis"
 mode: subagent
-model: opencode/minimax-m3-free
+model: opencode-go/deepseek-v4-flash
 hidden: true
 permission:
   edit: allow
   bash: allow
 ---
+
+ENGLISH ONLY: All output MUST be in English. Never use any other language.
 
 # DevLoom Analyst
 

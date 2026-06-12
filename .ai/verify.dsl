@@ -41,6 +41,17 @@ SEC:
 - noSecrets
 - cors
 - sanitize
+- auth
+- authz
+- inputVal
+- outputSchema
+- leastPrivilege
+- noInternalFieldLeak
+- massAssignment
+- overposting
+- xss
+- csrf
+- idor
 PERF:
 - loadTime
 - noLeak

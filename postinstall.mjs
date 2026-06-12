@@ -110,6 +110,7 @@ const AGENTS = [
   "devloom-form-verifier",
   "devloom-a11y-verifier",
   "devloom-api-verifier",
+  "devloom-security",
   "devloom-journey-agent",
   "devloom-rca",
   "devloom-repair",
@@ -118,7 +119,9 @@ const AGENTS = [
   "devloom-documenter",
 ]
 
-const COMMANDS = ["devloom", "devloom-status", "devloom-resume", "devloom-init", "devloom-save"]
+const COMMANDS = ["devloom", "devloom-status", "devloom-resume", "devloom-init", "devloom-save", "devloom-auto", "devloom-go", "devloom-go-economy", "devloom-go-flash", "devloom-deepseek", "devloom-free", "devloom-plan"]
+
+const SCRIPTS_DIR = resolve(CONFIG_DIR, "devloom-scripts")
 
 const PROTOCOLS = [
   "orchestrator-core",
@@ -158,6 +161,11 @@ function main() {
       `Command: /${name}`
     )
   }
+  installFile(
+    resolve(__dirname, "scripts", "profile.mjs"),
+    resolve(COMMANDS_DIR, "profile.mjs"),
+    "Profile manager"
+  )
 
   console.log("\nInstalling skills:")
   installDirRecursive(
@@ -171,6 +179,13 @@ function main() {
     resolve(__dirname, ".ai"),
     AI_DIR,
     "AI"
+  )
+
+  console.log("\nInstalling profile manager scripts:")
+  installDirRecursive(
+    resolve(__dirname, "scripts"),
+    SCRIPTS_DIR,
+    "Script"
   )
 
   console.log("\nInstalling protocol modules:")

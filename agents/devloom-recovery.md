@@ -1,7 +1,7 @@
 ---
 description: "DevLoom Recovery: callable by the orchestrator for autonomous failure recovery"
 mode: subagent
-model: opencode/minimax-m3-free
+model: opencode-go/deepseek-v4-flash
 hidden: true
 permission:
   edit: allow
@@ -9,6 +9,8 @@ permission:
 ---
 
 # DevLoom Recovery
+
+ENGLISH ONLY: All output MUST be in English. Never use any other language.
 
 LOAD: ~/.config/opencode/devloom-ai/core.dsl|~/.config/opencode/skills/verify/recovery.md
 ROLE: recover autonomous failure

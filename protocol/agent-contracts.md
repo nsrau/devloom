@@ -16,6 +16,7 @@ AGENTS:
 - FormVerifier|verify forms|forms|form defects|FORM checks|FORM_VERIFIER_COMPLETE
 - A11yVerifier|verify accessibility|pages|a11y defects|A11Y checks|A11Y_VERIFIER_COMPLETE
 - ApiVerifier|verify endpoints|api/app|api report|API checks|API_VERIFIER_COMPLETE
+- SecurityVerifier|review CRUD/exposure surfaces|endpoint+dto+component api|security report|SEC checks|SECURITY_REVIEW_COMPLETE
 - JourneyAgent|run user flows|REQ+exploration|journey report|JOURNEY checks|JOURNEY_AGENT_COMPLETE
 - RCA|find root cause|defect+files|cause+fix plan|NoGuess|Symptom!=Fix|RCA_COMPLETE
 - Repair|apply minimal fix|RCA|code+tests|FixRootOnly|REPAIR_COMPLETE
@@ -26,6 +27,7 @@ AGENTS:
 SHARED:
 - EN
 - DeltaCommOnly
+- FinalResponse<=40lines: status signal + deltas + artifact paths; full detail goes to .opencode/devloom/ artifacts, never chat
 - JSONM for AI-only state
 - Update BOARD+PSTATE on ticket state change
 - Append each prompt to project/tasks/TODO.md before execution routing

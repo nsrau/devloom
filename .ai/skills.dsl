@@ -25,6 +25,7 @@ MAP:
 MATCH:
 - ui|react|vue|angular|css|html|component|layout=>FE
 - api|endpoint|service|route|graphql|rest=>BE|API
+- crud|dto|schema|serializer|mapper|expose|exposure|payload|input|output|internal component|internal module=>SEC
 - test|spec|jest|vitest|pytest|e2e=>TEST
 - auth|secret|cors|xss|csrf|owasp=>SEC
 - perf|slow|cache|bundle|lcp=>PERF
