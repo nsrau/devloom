@@ -6,7 +6,8 @@ dist/
 *.log
 .DS_Store
 Thumbs.db
-.opencode/
-coverage/
+.opencode/devloom/project/
+.opencode/devloom/reopen.sh
 .claude/
 .codex/
+coverage/

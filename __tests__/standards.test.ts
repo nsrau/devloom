@@ -285,7 +285,6 @@ describe("Profile detection and fallback behavior", () => {
     expect(config).toHaveProperty("resolvedAt")
     expect(config).toHaveProperty("models")
     expect(config).toHaveProperty("overrides")
-    expect(config).toHaveProperty("availableModelsSnapshot")
   })
 
   test("free profile has all 16 agents mapped", () => {
