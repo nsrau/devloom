@@ -30,47 +30,43 @@ pipeline by default — only the agents the task actually needs.
          |
          +-- TRIAGE: classify intent -> minimal chain
          |
-         |     feature   analyst > architect > developer > qa > documenter
-         |     bug       rca > repair > regression
-         |     refactor  architect > developer > qa > regression
+         |     feature   planner > developer > qa > documenter
+         |     bug       developer (root-cause fix) > qa (regression)
+         |     refactor  planner > developer > qa
          |     small     developer > qa
-         |     docs      architect > documenter
-         |     spec/plan analyst > architect
-         |     explore   explorer
+         |     docs      planner > documenter
+         |     spec/plan planner
+         |     explore   verifier (scope=explore)
          |
          +-- CONDITIONAL ADD-ONS (only when touched)
-         |     UI        route + form + a11y verifiers
-         |     API       api-verifier
+         |     image/screenshot/mockup   vision (first) -> chain for actual intent
+         |     UI        verifier (scope=route,form,a11y)
+         |     API       verifier (scope=api,contract)
          |     CRUD/data exposure   security (mandatory)
-         |     user flow            journey-agent
+         |     user flow            verifier (scope=journey,state)
          |
-         +-- DEFECT LOOP: rca > repair > regression (max 3 cycles)
-         +-- RECOVERY: self-heals build/test/network failures
+         +-- DEFECT LOOP: developer (root-cause fix) > qa (regression), max 3 cycles
+         +-- RECOVERY: orchestrator bounded retry, then BLOCKED report
          |
          +-- DEVLOOM_DONE -- chain gates pass
 ```
 
 ### Agent Roster
 
-| Agent | Mode | Role |
-|---|---|---|
-| `devloom-orchestrator` | `primary` | Loop controller, phase manager, completion gate |
-| `devloom-analyst` | `subagent` | Prompt -> requirements |
-| `devloom-architect` | `subagent` | Requirements -> plan |
-| `devloom-developer` | `subagent` | Task implementation |
-| `devloom-qa` | `subagent` | Tests, lint, verdict |
-| `devloom-explorer` | `subagent` | App exploration -- discovers routes, pages, elements |
-| `devloom-route-verifier` | `subagent` | Route rendering, DOM inspection |
-| `devloom-form-verifier` | `subagent` | Form validation, boundary testing |
-| `devloom-a11y-verifier` | `subagent` | Accessibility audit |
-| `devloom-api-verifier` | `subagent` | API endpoint verification |
-| `devloom-security` | `subagent` | Security review for CRUD and exposure surfaces |
-| `devloom-journey-agent` | `subagent` | User journey generation + execution |
-| `devloom-rca` | `subagent` | Root cause analysis |
-| `devloom-repair` | `subagent` | Defect resolution |
-| `devloom-regression` | `subagent` | Post-repair regression checks |
-| `devloom-recovery` | `subagent` | Autonomous failure recovery |
-| `devloom-documenter` | `subagent` | README + API doc updates |
+7 agents — the orchestrator routes; six surgical specialists do the work. Each loads exactly one skill.
+
+| Agent | Mode | Role | Skill | Replaces |
+|---|---|---|---|---|
+| `devloom-orchestrator` | `primary` | Triage, route, state, completion gate | — | — |
+| `devloom-planner` | `subagent` | Prompt -> requirements + CleanArch plan + tickets | `plan/planning` | analyst, architect |
+| `devloom-developer` | `subagent` | Implement ticket / root-cause fix (TDD, SOLID) | `build/development` | developer, rca, repair |
+| `devloom-qa` | `subagent` | Tests, lint, code review, regression | `verify/quality-assurance` | qa, regression |
+| `devloom-verifier` | `subagent` | Runtime app checks by scope (explore/route/dom/form/a11y/api/contract/journey/state) | `verify/app-verification` | explorer, route/form/a11y/api verifiers, journey-agent |
+| `devloom-security` | `subagent` | Forensic security review for CRUD/exposure surfaces | `review/security-review` | security |
+| `devloom-documenter` | `subagent` | README + API docs + state updates | `ship/documentation` | documenter |
+| `devloom-vision` | `subagent` | Analyze images/screenshots/mockups; produces structured descriptions for agents without vision | `build/vision-analysis` | — |
+
+Failure recovery folds into the orchestrator's bounded-retry / BLOCKED logic (no separate agent).
 
 All `devloom-*` subagents are intended to be auto-invoked by
 `devloom-orchestrator` during the delivery loop. Manual invocation remains
@@ -252,11 +248,11 @@ model optimized for its role.
 | Profile | Tier | Quality | Cost | Best for |
 |---------|------|---------|------|----------|
 | **go-flash** | OpenCode Go | Good | Cheapest paid | Default — all agents on deepseek-v4-flash |
-| **go-premium** | OpenCode Go | Highest | Paid | Production delivery |
+| **go** | OpenCode Go | Highest | Paid | Production delivery |
 | **go-economy** | OpenCode Go | High | Lower | Daily development, budget-conscious |
 | **free** | OpenCode Free | Good | Zero | Evaluation, learning, hobby projects |
 
-### go-premium profile (max quality)
+### go profile (max quality)
 
 Uses the strongest OpenCode Go models per role. This is the profile baked into
 all DevLoom agent files by default.
@@ -267,20 +263,11 @@ Create `.opencode/devloom/config.json`:
 {
   "models": {
     "orchestrator": "opencode-go/glm-5.1",
-    "analyst": "opencode-go/glm-5.1",
-    "architect": "opencode-go/glm-5.1",
+    "planner": "opencode-go/glm-5.1",
     "developer": "opencode-go/kimi-k2.6",
     "qa": "opencode-go/deepseek-v4-pro",
-    "explorer": "opencode-go/kimi-k2.6",
-    "route-verifier": "opencode-go/deepseek-v4-pro",
-    "form-verifier": "opencode-go/deepseek-v4-pro",
-    "a11y-verifier": "opencode-go/glm-5.1",
-    "api-verifier": "opencode-go/deepseek-v4-pro",
-    "journey-agent": "opencode-go/glm-5.1",
-    "rca": "opencode-go/deepseek-v4-pro",
-    "repair": "opencode-go/kimi-k2.6",
-    "regression": "opencode-go/deepseek-v4-pro",
-    "recovery": "opencode-go/deepseek-v4-flash",
+    "verifier": "opencode-go/deepseek-v4-pro",
+    "security": "opencode-go/deepseek-v4-pro",
     "documenter": "opencode-go/glm-5.1"
   }
 }
@@ -293,22 +280,13 @@ Uses faster, lower-cost Go models while maintaining strong results:
 ```json
 {
   "models": {
-    "orchestrator": "opencode-go/deepseek-v4-flash",
-    "analyst": "opencode-go/minimax-m2.7",
-    "architect": "opencode-go/minimax-m2.7",
-    "developer": "opencode-go/deepseek-v4-flash",
-    "qa": "opencode-go/deepseek-v4-flash",
-    "explorer": "opencode-go/deepseek-v4-flash",
-    "route-verifier": "opencode-go/deepseek-v4-flash",
-    "form-verifier": "opencode-go/deepseek-v4-flash",
-    "a11y-verifier": "opencode-go/minimax-m2.7",
-    "api-verifier": "opencode-go/deepseek-v4-flash",
-    "journey-agent": "opencode-go/minimax-m2.7",
-    "rca": "opencode-go/deepseek-v4-flash",
-    "repair": "opencode-go/deepseek-v4-flash",
-    "regression": "opencode-go/deepseek-v4-flash",
-    "recovery": "opencode-go/deepseek-v4-flash",
-    "documenter": "opencode-go/minimax-m2.7"
+    "orchestrator": "opencode-go/deepseek-v4-pro",
+    "planner": "opencode-go/kimi-k2.6",
+    "developer": "opencode-go/kimi-k2.6",
+    "qa": "opencode-go/deepseek-v4-pro",
+    "verifier": "opencode-go/deepseek-v4-pro",
+    "security": "opencode-go/deepseek-v4-pro",
+    "documenter": "opencode-go/qwen3.6-plus"
   }
 }
 ```
@@ -321,47 +299,29 @@ Uses only OpenCode Free models (zero cost):
 {
   "models": {
     "orchestrator": "opencode/big-pickle",
-    "analyst": "opencode/nemotron-3-ultra-free",
-    "architect": "opencode/nemotron-3-ultra-free",
-    "developer": "opencode/deepseek-v4-flash-free",
-    "qa": "opencode/deepseek-v4-flash-free",
-    "explorer": "opencode/deepseek-v4-flash-free",
-    "route-verifier": "opencode/deepseek-v4-flash-free",
-    "form-verifier": "opencode/deepseek-v4-flash-free",
-    "a11y-verifier": "opencode/nemotron-3-ultra-free",
-    "api-verifier": "opencode/deepseek-v4-flash-free",
-    "journey-agent": "opencode/nemotron-3-ultra-free",
-    "rca": "opencode/deepseek-v4-flash-free",
-    "repair": "opencode/deepseek-v4-flash-free",
-    "regression": "opencode/deepseek-v4-flash-free",
-    "recovery": "opencode/big-pickle",
+    "planner": "opencode/nemotron-3-ultra-free",
+    "developer": "opencode/nemotron-3-ultra-free",
+    "qa": "opencode/nemotron-3-ultra-free",
+    "verifier": "opencode/nemotron-3-ultra-free",
+    "security": "opencode/nemotron-3-ultra-free",
     "documenter": "opencode/nemotron-3-ultra-free"
   }
 }
 ```
 
-### Model-routing table (go-premium)
+### Model-routing table (go)
 
-Every agent is assigned a model optimized for its specific role:
+Each of the 7 agents is assigned a model optimized for its role:
 
-| Agent | Role | Go-Premium Model | Rationale |
+| Agent | Role | Go Model | Rationale |
 |---|---|---|---|
-| `orchestrator` | Loop controller, phase manager | `opencode-go/glm-5.1` | Strong instruction following, long-context planning |
-| `analyst` | Requirements analysis | `opencode-go/glm-5.1` | Deep reasoning, structured document generation |
-| `architect` | Design & task planning | `opencode-go/glm-5.1` | Architectural reasoning, dependency resolution |
-| `developer` | Code implementation | `opencode-go/kimi-k2.6` | Top-tier code generation across all languages |
-| `qa` | Tests, lint, verdict | `opencode-go/deepseek-v4-pro` | Precise analytical verification |
-| `explorer` | App surface discovery | `opencode-go/kimi-k2.6` | Navigating and comprehending complex UIs |
-| `route-verifier` | Route rendering + DOM | `opencode-go/deepseek-v4-pro` | Reliable, deterministic inspection |
-| `form-verifier` | Form validation | `opencode-go/deepseek-v4-pro` | Boundary-value precision |
-| `a11y-verifier` | Accessibility audit | `opencode-go/glm-5.1` | Spec adherence, WCAG interpretation |
-| `api-verifier` | API endpoint verification | `opencode-go/deepseek-v4-pro` | Schema + contract validation |
-| `journey-agent` | User journeys + states | `opencode-go/glm-5.1` | Scenario generation, state machine modeling |
-| `rca` | Root cause analysis | `opencode-go/deepseek-v4-pro` | Deep trace analysis, defect reasoning |
-| `repair` | Defect resolution | `opencode-go/kimi-k2.6` | Code fix generation |
-| `regression` | Post-fix regression checks | `opencode-go/deepseek-v4-pro` | Fast, thorough re-verification |
-| `recovery` | Self-healing | `opencode-go/deepseek-v4-flash` | Fast + cheap for frequent recovery attempts |
-| `documenter` | Docs update | `opencode-go/glm-5.1` | Documentation quality, readability |
+| `orchestrator` | Triage, routing, state, gate | `opencode-go/glm-5.1` | Strong instruction following, long-context planning |
+| `planner` | Requirements + CleanArch plan | `opencode-go/glm-5.1` | Deep reasoning, architecture + dependency resolution |
+| `developer` | Implementation + root-cause fixes | `opencode-go/kimi-k2.6` | Top-tier code generation across all languages |
+| `qa` | Tests, lint, code review, regression | `opencode-go/deepseek-v4-pro` | Precise analytical verification |
+| `verifier` | Runtime app checks (all scopes) | `opencode-go/deepseek-v4-pro` | Reliable, deterministic inspection |
+| `security` | CRUD/exposure forensic review | `opencode-go/deepseek-v4-pro` | Methodical threat reasoning |
+| `documenter` | Docs + state update | `opencode-go/glm-5.1` | Documentation quality, readability |
 
 ### Prefix requirement
 
@@ -369,7 +329,7 @@ All models MUST use the `opencode/` or `opencode-go/` prefix:
 
 | Correct | Wrong |
 |---|---|
-| `opencode/minimax-m3-free` | `minimax-m2.5-free` |
+| `opencode/nemotron-3-ultra-free` | `nemotron-3-ultra-free` |
 | `opencode-go/deepseek-v4-pro` | `deepseek-v4-pro` |
 
 If you forget the prefix, DevLoom adds it automatically and logs a warning.
@@ -377,7 +337,7 @@ If you forget the prefix, DevLoom adds it automatically and logs a warning.
 ### First-run interactive setup
 
 If no `config.json` exists, Phase 0 detects available models (`opencode models`),
-asks which profile to use (**go-premium**, **go-economy**, or **free**), then
+asks which profile to use (**go**, **go-economy**, or **free**), then
 assigns the best model per agent role for the chosen profile.
 
 ---
@@ -387,7 +347,7 @@ assigns the best model per agent role for the chosen profile.
 DevLoom is **purpose-built for OpenCode Go** -- the premium model tier that
 delivers the highest-quality results from the OpenCode platform.
 
-### Why go-premium?
+### Why go?
 
 Each agent in the pipeline has different cognitive demands:
 
@@ -410,7 +370,7 @@ models for simple tasks, no under-powering critical ones.
 
 ### Benchmark results
 
-| Metric | go-premium | go-economy | free |
+| Metric | go | go-economy | free |
 |---------|-----------|------------|------|
 | Gate pass rate (first attempt) | 94% | 82% | 67% |
 | Average repair cycles | 0.3 | 0.9 | 1.8 |
@@ -423,17 +383,17 @@ Run `opencode models` to see what's currently available in your environment.
 
 ## Skills
 
-DevLoom includes 20+ skill files across 7 categories guiding each agent's workflow:
+DevLoom ships one focused skill per agent (plus a meta discovery skill). Each skill folds in the relevant engineering standards — SOLID, clean code, clean architecture, TDD, UI/UX (WCAG-AA), and forensic root-cause discipline (no workarounds):
 
-| Category | Skills |
-|----------|--------|
-| `define/` | requirements-analysis |
-| `plan/` | architecture-planning |
-| `build/` | frontend, backend, api-design, incremental-dev, tdd |
-| `verify/` | quality-assurance, debugging, application-exploration, route-verification, form-verification, dom-inspection, accessibility-verification, api-verification, contract-validation, user-journey-generation, state-exploration, root-cause-analysis, repair, regression-verification, recovery |
-| `review/` | code-review, security-review, performance-review |
-| `ship/` | documentation |
-| `meta/` | skill-discovery |
+| Category | Skill | Agent |
+|----------|-------|-------|
+| `plan/` | planning | planner |
+| `build/` | development | developer |
+| `verify/` | quality-assurance | qa |
+| `verify/` | app-verification | verifier |
+| `review/` | security-review | security |
+| `ship/` | documentation | documenter |
+| `meta/` | skill-discovery | orchestrator |
 
 ---
 
@@ -458,30 +418,20 @@ devloom/
 +-- src/
 |   +-- index.ts              # Plugin entry point
 |   +-- plugin.ts             # Lifecycle hooks
-+-- agents/
-|   +-- devloom-orchestrator.md    # primary -- loop controller, phase manager
-|   +-- devloom-analyst.md         # subagent -- requirements
-|   +-- devloom-architect.md       # subagent -- design & task list
-|   +-- devloom-developer.md       # subagent -- code implementation
-|   +-- devloom-qa.md              # subagent -- tests, lint, verdict
-|   +-- devloom-explorer.md        # subagent -- app exploration
-|   +-- devloom-route-verifier.md  # subagent -- route rendering + DOM
-|   +-- devloom-form-verifier.md   # subagent -- form validation
-|   +-- devloom-a11y-verifier.md   # subagent -- accessibility audit
-|   +-- devloom-api-verifier.md    # subagent -- API endpoint verification
++-- agents/                        # 7 agents -- 1 router + 6 specialists
+|   +-- devloom-orchestrator.md    # primary -- triage, route, state, gate
+|   +-- devloom-planner.md         # subagent -- requirements + CleanArch plan
+|   +-- devloom-developer.md       # subagent -- implement / root-cause fix
+|   +-- devloom-qa.md              # subagent -- tests, lint, review, regression
+|   +-- devloom-verifier.md        # subagent -- runtime app checks by scope
 |   +-- devloom-security.md        # subagent -- CRUD + exposure security review
-|   +-- devloom-journey-agent.md   # subagent -- user journeys + states
-|   +-- devloom-rca.md             # subagent -- root cause analysis
-|   +-- devloom-repair.md          # subagent -- defect resolution
-|   +-- devloom-regression.md      # subagent -- regression checks
-|   +-- devloom-recovery.md        # subagent -- self-healing
-|   +-- devloom-documenter.md      # subagent -- docs update
+|   +-- devloom-documenter.md      # subagent -- docs + state update
 +-- commands/
 |   +-- devloom.md
 |   +-- devloom-init.md
 |   +-- devloom-resume.md
 |   +-- devloom-status.md
-+-- skills/                      # 20+ skill files across 7 categories
++-- skills/                      # 7 skill files -- one per agent
 +-- protocol/                    # shared operating rules and contracts
 +-- project/                     # project workspace standard and templates
 +-- __tests__/                   # Jest test suites
@@ -490,17 +440,6 @@ devloom/
 +-- SECURITY.md
 +-- package.json
 ```
-
----
-
-## Demo
-
-A working example in [`demo/`](demo/) was generated from the prompt:
-
-```
-/devloom Build a simple full-stack Task List web app.
-```
-
 ---
 
 ## License
