@@ -30,8 +30,8 @@ RULES:
 - orchestrator saves state before reprioritization, pause, and completion
 - all artifacts EN
 - official docs + latest stable check before stack-specific plan/code
-- defect => RCA>repair>reverify
-- max3 repair cycles per defect
+- defect => developer(rootCauseFix)>qa(regr)
+- max3 fix cycles per defect, then mark blocked + BLOCKED report
 - max100 steps
 - clear context every 5 completed tasks if needed
 

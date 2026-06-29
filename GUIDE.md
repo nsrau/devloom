@@ -44,11 +44,13 @@ DevLoom — post-install
 
 Installing agents:
   - Agent: devloom-orchestrator
-  - Agent: devloom-analyst
-  - Agent: devloom-architect
+  - Agent: devloom-planner
   - Agent: devloom-developer
   - Agent: devloom-qa
+  - Agent: devloom-verifier
+  - Agent: devloom-security
   - Agent: devloom-documenter
+  - Agent: devloom-vision
 
 Installing commands:
   - Command: /devloom
@@ -115,12 +117,13 @@ Or check installed files directly:
 ls ~/.config/opencode/agents/ | grep devloom
 
 # Expected:
-devloom-analyst.md
-devloom-architect.md
 devloom-developer.md
 devloom-documenter.md
 devloom-orchestrator.md
+devloom-planner.md
 devloom-qa.md
+devloom-security.md
+devloom-verifier.md
 ```
 
 All installed `devloom-*` subagents are callable by `devloom-orchestrator`
@@ -135,7 +138,7 @@ persists state, while the matching subagent executes each specialist phase.
 
 ### Default (no config)
 
-All agents default to `opencode/minimax-m3-free` — a capable free model.
+All agents default to `opencode/nemotron-3-ultra-free` — a capable free model.
 
 ### Model Routing — Three Profiles
 
@@ -143,34 +146,25 @@ DevLoom provides three model profiles that trade off quality vs cost:
 
 | Profile | Use case | Tier |
 |---|---|---|
-| `go-premium` | Production-grade builds, maximum quality | Go (paid) |
+| `go` | Production-grade builds, maximum quality | Go (paid) |
 | `go-economy` | Good quality at lower cost | Go (paid) |
 | `free` | Zero-cost experimentation | Free |
 
-The profile determines which model is assigned to each agent role. Premium roles (architect, QA, verifiers) get stronger models; supporting roles (recovery) get faster/cheaper ones.
+The profile determines which model is assigned to each of the 8 agent roles. Premium roles (planner, QA, verifier, security) get stronger models; the `vision` role always uses a multimodal model regardless of profile. The default `go-flash` puts every non-vision role on DeepSeek V4 Flash.
 
-#### go-premium (max quality — default is go-flash)
+#### go (max quality — default is go-flash)
 
 ```json
 {
   "models": {
     "orchestrator": "opencode-go/glm-5.1",
-    "analyst": "opencode-go/glm-5.1",
-    "architect": "opencode-go/glm-5.1",
+    "planner": "opencode-go/glm-5.1",
     "developer": "opencode-go/kimi-k2.6",
     "qa": "opencode-go/deepseek-v4-pro",
-    "explorer": "opencode-go/kimi-k2.6",
-    "route-verifier": "opencode-go/deepseek-v4-pro",
-    "form-verifier": "opencode-go/deepseek-v4-pro",
-    "a11y-verifier": "opencode-go/glm-5.1",
-    "api-verifier": "opencode-go/deepseek-v4-pro",
+    "verifier": "opencode-go/deepseek-v4-pro",
     "security": "opencode-go/deepseek-v4-pro",
-    "journey-agent": "opencode-go/glm-5.1",
-    "rca": "opencode-go/deepseek-v4-pro",
-    "repair": "opencode-go/kimi-k2.6",
-    "regression": "opencode-go/deepseek-v4-pro",
-    "recovery": "opencode-go/deepseek-v4-flash",
-    "documenter": "opencode-go/glm-5.1"
+    "documenter": "opencode-go/glm-5.1",
+    "vision": "opencode-go/minimax-m3"
   }
 }
 ```
@@ -181,22 +175,13 @@ The profile determines which model is assigned to each agent role. Premium roles
 {
   "models": {
     "orchestrator": "opencode-go/deepseek-v4-pro",
-    "analyst": "opencode-go/qwen3.6-plus",
-    "architect": "opencode-go/kimi-k2.6",
+    "planner": "opencode-go/kimi-k2.6",
     "developer": "opencode-go/kimi-k2.6",
     "qa": "opencode-go/deepseek-v4-pro",
-    "explorer": "opencode-go/deepseek-v4-pro",
-    "route-verifier": "opencode-go/deepseek-v4-pro",
-    "form-verifier": "opencode-go/deepseek-v4-pro",
-    "a11y-verifier": "opencode-go/deepseek-v4-pro",
-    "api-verifier": "opencode-go/deepseek-v4-pro",
+    "verifier": "opencode-go/deepseek-v4-pro",
     "security": "opencode-go/deepseek-v4-pro",
-    "journey-agent": "opencode-go/deepseek-v4-pro",
-    "rca": "opencode-go/deepseek-v4-pro",
-    "repair": "opencode-go/kimi-k2.6",
-    "regression": "opencode-go/deepseek-v4-pro",
-    "recovery": "opencode-go/deepseek-v4-flash",
-    "documenter": "opencode-go/qwen3.6-plus"
+    "documenter": "opencode-go/qwen3.6-plus",
+    "vision": "opencode-go/minimax-m3"
   }
 }
 ```
@@ -207,22 +192,13 @@ The profile determines which model is assigned to each agent role. Premium roles
 {
   "models": {
     "orchestrator": "opencode/big-pickle",
-    "analyst": "opencode/minimax-m3-free",
-    "architect": "opencode/minimax-m3-free",
-    "developer": "opencode/minimax-m3-free",
-    "qa": "opencode/minimax-m3-free",
-    "explorer": "opencode/minimax-m3-free",
-    "route-verifier": "opencode/minimax-m3-free",
-    "form-verifier": "opencode/minimax-m3-free",
-    "a11y-verifier": "opencode/minimax-m3-free",
-    "api-verifier": "opencode/minimax-m3-free",
-    "security": "opencode/minimax-m3-free",
-    "journey-agent": "opencode/minimax-m3-free",
-    "rca": "opencode/minimax-m3-free",
-    "repair": "opencode/minimax-m3-free",
-    "regression": "opencode/minimax-m3-free",
-    "recovery": "opencode/minimax-m3-free",
-    "documenter": "opencode/minimax-m3-free"
+    "planner": "opencode/nemotron-3-ultra-free",
+    "developer": "opencode/nemotron-3-ultra-free",
+    "qa": "opencode/nemotron-3-ultra-free",
+    "verifier": "opencode/nemotron-3-ultra-free",
+    "security": "opencode/nemotron-3-ultra-free",
+    "documenter": "opencode/nemotron-3-ultra-free",
+    "vision": "opencode-go/minimax-m3"
   }
 }
 ```
@@ -239,14 +215,14 @@ All models MUST use the `opencode/` or `opencode-go/` prefix:
 
 | Correct | Wrong |
 |---|---|
-| `opencode/minimax-m3-free` | `minimax-m2.5-free` |
+| `opencode/nemotron-3-ultra-free` | `nemotron-3-ultra-free` |
 | `opencode-go/deepseek-v4-pro` | `deepseek-v4-pro` |
 
 If you forget the prefix, DevLoom adds it automatically and logs a warning.
 
 ### First-run interactive setup
 
-If no `config.json` exists, Phase 0 detects available models (`opencode models`), asks which profile to use (**go-premium**, **go-economy**, or **free**), then assigns models per agent role matching the selected profile.
+If no `config.json` exists, Phase 0 detects available models (`opencode models`), asks which profile to use (**go**, **go-economy**, or **free**), then assigns models per agent role matching the selected profile.
 
 ### Available models
 
@@ -343,7 +319,7 @@ opencode run "/devloom Add OpenTelemetry tracing to all HTTP handlers"
 ### What happens after you submit the prompt
 
 The orchestrator first **triages** the prompt and picks the minimal agent chain
-for the intent (bug → rca>repair>regression; docs → architect>documenter;
+for the intent (bug → developer-fix>qa-regression; docs → planner>documenter;
 small change → developer>qa; etc. — see `workflow.dsl` CHAINS). Verifier
 agents are added only when the work touches their surface (UI, API, CRUD/data
 exposure, user flows). The full sequence below runs only for a feature that
@@ -357,9 +333,9 @@ preference (Free or Go tier), and assigns models per agent role.
 
 **Phase 1 — Understand & Plan**
 
-The Analyst explores your codebase and writes `.opencode/devloom/requirements.md`.
-The Architect reads the requirements and writes `.opencode/devloom/plan.md`
-with an ordered, dependency-resolved task list.
+The Planner explores your codebase, writes `.opencode/devloom/requirements.md`,
+then a CleanArch `.opencode/devloom/plan.md` with an ordered, dependency-resolved
+task list (it can run REQ-only, PLAN-only, or both).
 Before phase routing, the orchestrator appends the current user prompt as the
 last item in `.opencode/devloom/project/tasks/TODO.md`, loads relevant memory
 and skills, and keeps ticket/todo/plan artifacts synchronized.
@@ -367,58 +343,39 @@ and skills, and keeps ticket/todo/plan artifacts synchronized.
 **Phase 2 — Implementation & QA Loop**
 
 For each task in the plan:
-1. The Developer implements the code.
-2. QA writes tests, runs the linter, runs the full test suite, and reports
-   `QA_PASS` or `QA_FAIL`.
-3. On failure: the Orchestrator routes the defect to Root Cause Analysis → Repair
-   Agent → Regression checks. Up to 3 repair cycles per defect, then skipped.
+1. The Developer implements the code (TDD, SOLID, clean architecture).
+2. QA writes tests, runs the linter, runs the full test suite, reviews the code,
+   runs targeted regression, and reports `QA_PASS` or `QA_FAIL`.
+3. On failure: the Orchestrator routes the defect back to the Developer for a
+   root-cause fix (no workarounds), then QA regression. Up to 3 fix cycles per
+   defect, then the ticket is marked blocked.
 4. The Orchestrator marks the task `[x]` in `.opencode/devloom/plan.md`.
 
-**Phase 3 — Application Exploration**
+**Runtime verification (only when the change touches a surface)**
 
-The Explorer Agent starts the application and systematically discovers all
-routes, pages, menus, buttons, forms, inputs, links, tabs, accordions, modals,
-drawers, tables, search fields, and filters. Every discovered element is
-interacted with. The running application is the source of truth — not project
-specifications. Generates `.opencode/devloom/exploration-report.json`.
+A single Verifier agent runs the requested scope(s) against the running app —
+the running app is the source of truth, not specs. Scopes:
+- `explore` — discover routes, pages, buttons, forms, modals, tables.
+- `route` + `dom` — HTTP status, content, console errors, DOM integrity.
+- `form` — valid/invalid/boundary submissions, validation, loading/error/success.
+- `a11y` — ARIA, labels, keyboard nav, focus, contrast, semantic HTML.
+- `api` + `contract` — auth, validation, schema, status codes; runtime vs OpenAPI.
+- `journey` + `state` — generated user flows and state-transition coverage.
 
-**Phase 4 — Route, Form, UI & Accessibility Verification**
+The orchestrator adds only the scopes the change requires (UI → route/form/a11y,
+API → api/contract, user flow → journey/state).
 
-Three verification agents run in sequence:
-1. **Route Verifier** — Visits every route, checks HTTP status, page content,
-   console errors, and performs DOM inspection (getBoundingClientRect, computed
-   style, visibility, overlap detection).
-2. **Form Verifier** — Tests every form with valid/invalid submissions, field
-   validation, boundary values, error/success messages, and loading states.
-3. **A11y Verifier** — Checks ARIA attributes, labels, keyboard navigation,
-   focus management, tab order, color contrast, and semantic HTML.
+**Security (mandatory on exposure)**
 
-**Phase 5 — API Verification & Contract Validation**
+The `devloom-security` subagent is mandatory whenever a CRUD endpoint changes or
+when a component/module starts exposing internal data through input or output
+boundaries. It performs a forensic, evidence-based review.
 
-The API Verifier discovers all endpoints, validates authentication, authorization,
-input validation, output schema, status codes, error handling, pagination,
-filtering, and sorting. If no OpenAPI spec exists, one is generated from runtime
-behavior. Runtime responses are compared against contract to detect violations.
-
-**Phase 6 — User Journeys & State Exploration**
-
-The Journey Agent generates user journeys from requirements and discovered app
-structure (e.g., Register → Login → Create → Edit → Delete → Logout) and
-executes every journey automatically. State machines are derived from data
-models, and every state transition is tested (including invalid transitions).
-
-**Phase 7 — Cross-Cutting Verification**
-
-Performance checks (build size, load time) and security checks (dependency
-audit, secret scanning, OWASP patterns) are run against the full application.
-The `devloom-security` subagent is mandatory whenever a CRUD endpoint changes
-or when a component/module starts exposing internal data through input or
-output boundaries.
-
-**Phase 8 — Acceptance Gate (Final)**
+**Acceptance Gate (Final)**
 
 The Documenter updates README.md and any API docs.
-The Orchestrator runs the final acceptance gate with all 17 criteria:
+The Orchestrator runs the final acceptance gate against the criteria relevant to
+the chosen chain:
 
 ```
 build: pass
@@ -440,12 +397,13 @@ security_validation_verified: pass
 no_open_defects: pass
 ```
 
-If any gate fails, the Orchestrator routes back to Phase 2 for repair and
-re-verification. `DEVLOOM_DONE` is output only when ALL gates pass.
+If any gate fails, the Orchestrator routes back to the Developer for a
+root-cause fix and re-verification. `DEVLOOM_DONE` is output only when all gates
+for the chosen chain pass.
 
 Completed output example:
 ```
-DEVLOOM_DONE — ALL 17 GATES PASSED
+DEVLOOM_DONE — ALL GATES PASSED
 
 Completed 8 tasks:
   - Task 1: Database schema and migration
@@ -528,15 +486,14 @@ without starting a weave:
 
 ## Skills System
 
-Each agent loads domain-specific skills at session start. The `skill-discovery`
-meta-skill scans the task prompt and auto-loads the right skill (FE, BE, QA,
-security, docs, etc.).
+Each agent loads exactly one skill via its `LOAD:` directive. The skill folds in
+the relevant engineering standards (SOLID, clean code, clean architecture, TDD,
+UI/UX, forensic root-cause discipline). The `skill-discovery` meta-skill maps
+task domains to the right agent skill.
 
-```yaml
-# Each agent declares its skills in YAML frontmatter:
-skill:
-  - skill-discovery
-  - frontend-development
+```
+# Each agent's body declares its skill via LOAD:
+LOAD: ...|~/.config/opencode/skills/build/development.md
 ```
 
 Skills are stored in `~/.config/opencode/skills/` following the
@@ -544,19 +501,13 @@ Skills are stored in `~/.config/opencode/skills/` following the
 
 ```
 skills/
-├── meta/       skill-discovery
-├── define/     requirements-analysis
-├── plan/       architecture-planning
-├── build/      frontend-development, backend-development, api-design,
-│               incremental-development, test-driven-development
-├── verify/     quality-assurance, debugging, application-exploration,
-│               route-verification, form-verification, dom-inspection,
-│               accessibility-verification, api-verification,
-│               contract-validation, user-journey-generation,
-│               state-exploration, root-cause-analysis, repair,
-│               regression-verification, recovery
-├── review/     code-review, security-review, performance-review
-└── ship/       documentation
+├── meta/       skill-discovery   (orchestrator)
+├── plan/       planning          (planner)
+├── build/      development       (developer)
+├── verify/     quality-assurance (qa)
+│               app-verification  (verifier)
+├── review/     security-review   (security)
+└── ship/       documentation     (documenter)
 ```
 
 ---
@@ -701,43 +652,27 @@ devloom/
 ├── src/
 │   ├── index.ts                   # Plugin entry point (exports DevLoomPlugin)
 │   └── plugin.ts                  # Lifecycle hooks: event, tool.execute.before/after
-├── agents/
-│   ├── devloom-orchestrator.md    # primary — loop controller, phase manager
-│   ├── devloom-analyst.md         # subagent — requirements analysis
-│   ├── devloom-architect.md       # subagent — design & task list
-│   ├── devloom-developer.md       # subagent — code implementation
-│   ├── devloom-qa.md              # subagent — tests, lint, verdict
-│   ├── devloom-explorer.md        # subagent — app exploration
-│   ├── devloom-route-verifier.md  # subagent — route rendering + DOM inspection
-│   ├── devloom-form-verifier.md   # subagent — form validation testing
-│   ├── devloom-a11y-verifier.md   # subagent — accessibility audit
-│   ├── devloom-api-verifier.md    # subagent — API endpoint verification
+├── agents/                         # 7 agents — 1 router + 6 specialists
+│   ├── devloom-orchestrator.md    # primary — triage, route, state, gate
+│   ├── devloom-planner.md         # subagent — requirements + CleanArch plan
+│   ├── devloom-developer.md       # subagent — implement / root-cause fix (TDD, SOLID)
+│   ├── devloom-qa.md              # subagent — tests, lint, code review, regression
+│   ├── devloom-verifier.md        # subagent — runtime app checks by scope
 │   ├── devloom-security.md        # subagent — CRUD + exposure security review
-│   ├── devloom-journey-agent.md   # subagent — user journeys + state exploration
-│   ├── devloom-rca.md             # subagent — root cause analysis
-│   ├── devloom-repair.md          # subagent — defect resolution
-│   ├── devloom-regression.md      # subagent — regression verification
-│   ├── devloom-recovery.md        # subagent — autonomous failure recovery
-│   └── devloom-documenter.md      # subagent — docs update
+│   └── devloom-documenter.md      # subagent — docs + state update
 ├── commands/
 │   ├── devloom.md             # /devloom <prompt>
 │   ├── devloom-init.md        # /devloom-init
 │   ├── devloom-resume.md      # /devloom-resume
 │   └── devloom-status.md      # /devloom-status
-├── skills/                        # 21 skill files across 7 categories
+├── skills/                        # 7 skill files — one per agent
 │   ├── meta/       skill-discovery
-│   ├── define/     requirements-analysis
-│   ├── plan/       architecture-planning
-│   ├── build/      frontend-development, backend-development, api-design,
-│   │               incremental-development, test-driven-development
-│   ├── verify/     quality-assurance, debugging, application-exploration,
-│   │               route-verification, form-verification, dom-inspection,
-│   │               accessibility-verification, api-verification,
-│   │               contract-validation, user-journey-generation,
-│   │               state-exploration, root-cause-analysis, repair,
-│   │               regression-verification, recovery
-│   ├── review/     code-review, security-review, performance-review
-│   └── ship/       documentation
+│   ├── plan/       planning            (planner)
+│   ├── build/      development         (developer)
+│   ├── verify/     quality-assurance   (qa)
+│   │               app-verification    (verifier)
+│   ├── review/     security-review     (security)
+│   └── ship/       documentation       (documenter)
 ├── __tests__/                    # Unit tests (Jest)
 │   ├── index.test.ts             # Plugin smoke test
 │   ├── plugin.test.ts            # Lifecycle hook tests

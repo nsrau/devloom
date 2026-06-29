@@ -12,8 +12,19 @@ STATE:
 - REQ=.opencode/devloom/requirements.md
 - PLAN=.opencode/devloom/plan.md
 - DEF=.opencode/devloom/defects.json
+PRINCIPLES:
+- SOLID|CleanCode|CleanArch|DRY|KISS|YAGNI
+- TDD: test-first for logic, failing-repro-first for bugs
+- LayeredArch: domain<-app<-infra<-ui|DependencyInversion|no domain->framework coupling
+- SmallFns|IntentionRevealingNames|NoDeadCode|HandleErrors|GuardEdges
+- UX: Accessible(WCAG-AA)|Consistent|Responsive|ClearFeedback|ErrorRecovery
+- Surgical: change only what the task requires, smallest correct diff
+- Forensic: evidence-based, trace before acting, prove cause, verify after
+- CorrectSolution: root-cause fix using the right/idiomatic approach; NO workarounds/hacks/suppression
+- Precise: confirm assumptions against code/docs, never guess
 RULES:
 - EnglishOnly
+- ApplyPrinciples
 - SingleActive
 - PersistAll
 - NoDropPending

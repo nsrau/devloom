@@ -4,7 +4,7 @@
 
 Model routing is the mechanism by which DevLoom assigns a specific language model to each agent role within a delivery pipeline. Different models offer different trade-offs between reasoning quality, context window size, cost, and speed. Routing profiles define these assignments declaratively, allowing users to select the right balance for their budget and quality requirements without modifying agent logic.
 
-Each agent in the DevLoom pipeline (orchestrator, analyst, architect, developer, QA, verifiers, documenter, etc.) receives a model assignment from the active profile. The orchestrator applies these assignments when dispatching tasks to sub-agents.
+Each of the 7 DevLoom agents (orchestrator, planner, developer, qa, verifier, security, documenter) receives a model assignment from the active profile. The orchestrator applies these assignments when dispatching tasks to sub-agents.
 
 ## How Profile Selection Works
 
@@ -18,65 +18,47 @@ Example config.json entry:
 
 ```json
 {
-  "modelRouting": "go-premium"
+  "modelRouting": "go"
 }
 ```
 
 ## Profiles
 
-### go-premium (max quality)
+### go (max quality)
 
 The highest quality profile. Assigns the best available reasoning models to planning and architecture roles, the largest context models to implementation roles, and precise verification models to quality roles. Recommended for production work, complex features, and any task where quality is the primary concern.
 
 | Role | Model |
 |---|---|
 | orchestrator | opencode-go/glm-5.1 |
-| analyst | opencode-go/glm-5.1 |
-| architect | opencode-go/glm-5.1 |
+| planner | opencode-go/glm-5.1 |
 | developer | opencode-go/kimi-k2.6 |
 | qa | opencode-go/deepseek-v4-pro |
-| explorer | opencode-go/kimi-k2.6 |
-| route-verifier | opencode-go/deepseek-v4-pro |
-| form-verifier | opencode-go/deepseek-v4-pro |
-| a11y-verifier | opencode-go/glm-5.1 |
-| api-verifier | opencode-go/deepseek-v4-pro |
-| journey-agent | opencode-go/glm-5.1 |
-| rca | opencode-go/deepseek-v4-pro |
-| repair | opencode-go/kimi-k2.6 |
-| regression | opencode-go/deepseek-v4-pro |
-| recovery | opencode-go/deepseek-v4-flash |
+| verifier | opencode-go/deepseek-v4-pro |
+| security | opencode-go/deepseek-v4-pro |
 | documenter | opencode-go/glm-5.1 |
 
 ### go-economy
 
-A lower cost profile that retains Kimi K2.6 for the developer role (where long context matters most) and uses DeepSeek V4 Pro for orchestrator and verifier roles. Qwen models handle analyst and documenter tasks at reduced cost. Suitable for routine development work where premium reasoning is not essential.
+A lower cost profile that retains Kimi K2.6 for the developer role (where long context matters most) and uses DeepSeek V4 Pro for orchestrator, qa, verifier, and security roles. Qwen handles documentation at reduced cost. Suitable for routine development work where premium reasoning is not essential.
 
 | Role | Model |
 |---|---|
 | orchestrator | opencode-go/deepseek-v4-pro |
-| analyst | opencode-go/qwen3.6-plus |
-| architect | opencode-go/kimi-k2.6 |
+| planner | opencode-go/kimi-k2.6 |
 | developer | opencode-go/kimi-k2.6 |
 | qa | opencode-go/deepseek-v4-pro |
-| explorer | opencode-go/deepseek-v4-pro |
-| route-verifier | opencode-go/deepseek-v4-pro |
-| form-verifier | opencode-go/deepseek-v4-pro |
-| a11y-verifier | opencode-go/deepseek-v4-pro |
-| api-verifier | opencode-go/deepseek-v4-pro |
-| journey-agent | opencode-go/kimi-k2.6 |
-| rca | opencode-go/deepseek-v4-pro |
-| repair | opencode-go/kimi-k2.6 |
-| regression | opencode-go/deepseek-v4-pro |
-| recovery | opencode-go/deepseek-v4-flash |
+| verifier | opencode-go/deepseek-v4-pro |
+| security | opencode-go/deepseek-v4-pro |
 | documenter | opencode-go/qwen3.6-plus |
 
 ### free
 
-A zero-cost profile using only freely available models. Intended for experimentation, open-source projects, learning, and low-stakes development where cost must be zero. All agents use the same free-tier model. If a specific free model is unavailable, the fallback chain is: opencode/minimax-m3-free -> opencode/nemotron-3-super-free -> opencode/big-pickle -> opencode/deepseek-v4-flash-free.
+A zero-cost profile using only freely available models. Intended for experimentation, open-source projects, learning, and low-stakes development where cost must be zero. All agents use the same free-tier model. If a specific free model is unavailable, the fallback chain is: opencode/nemotron-3-ultra-free -> opencode/big-pickle -> opencode/mimo-v2.5-free -> opencode/deepseek-v4-flash-free.
 
 | Role | Model |
 |---|---|
-| all agents | opencode/minimax-m3-free |
+| all agents | opencode/nemotron-3-ultra-free |
 
 ## Model Guidance
 
@@ -90,7 +72,7 @@ GLM 5.1 (opencode-go/glm-5.1) provides the strongest reasoning and planning capa
 - Multi-step planning with dependency management
 - High-stakes decisions where incorrect reasoning would be costly
 
-In practice, GLM 5.1 should be assigned to the orchestrator, analyst, architect, and any agent that makes strategic decisions. For UI/UX-heavy Angular or React SaaS frontend work, GLM 5.1 delivers superior reasoning around component hierarchies, state management patterns, accessibility, and user flow design.
+In practice, GLM 5.1 should be assigned to the orchestrator, planner, and any agent that makes strategic decisions. For UI/UX-heavy Angular or React SaaS frontend work, GLM 5.1 delivers superior reasoning around component hierarchies, state management patterns, accessibility, and user flow design.
 
 ### When to Use Kimi K2.6
 
@@ -98,7 +80,7 @@ Kimi K2.6 (opencode-go/kimi-k2.6) offers the largest context window of any avail
 
 - Multi-file implementation changes that span many modules
 - Refactoring across large codebases
-- Code exploration and discovery (the explorer role)
+- Code exploration and discovery (the developer/planner roles)
 - Fixing bugs that require broad context to understand the full system
 - Backend and data-intensive work where the context of multiple services, database schemas, and data pipelines must be held simultaneously
 
@@ -118,7 +100,7 @@ DeepSeek V4 Pro is reliable and precise, making it the default for all verifier 
 
 ### When to Use DeepSeek V4 Flash
 
-DeepSeek V4 Flash (opencode-go/deepseek-v4-flash) is a lower-cost, faster model. It is reserved for the recovery agent because recovery tasks are typically simple and well-scoped (rolling back a change, retrying a step, resetting state) and do not benefit from premium reasoning. Using Flash here reduces cost without meaningful quality loss.
+DeepSeek V4 Flash (opencode-go/deepseek-v4-flash) is a lower-cost, faster model. It powers every role in the default `go-flash` profile, and in the higher-tier profiles it suits well-scoped, deterministic work (simple verification scopes, routine fixes) that does not benefit from premium reasoning. Using Flash there reduces cost without meaningful quality loss.
 
 ### When to Use Qwen Models
 
@@ -129,11 +111,11 @@ Qwen models (opencode-go/qwen3.6-plus) provide good quality at lower cost. They 
 - Code summarization
 - Tasks where the cost of premium models is not justified by the task complexity
 
-In the go-economy profile, Qwen replaces GLM 5.1 for analyst and documenter roles, significantly reducing cost while maintaining acceptable output quality.
+In the go-economy profile, Qwen replaces GLM 5.1 for the documenter role, significantly reducing cost while maintaining acceptable output quality.
 
 ### When to Use MiniMax / Nemotron / Big Pickle (Free Tier)
 
-The free tier models (opencode/minimax-m3-free, opencode/nemotron-3-super-free, opencode/big-pickle, opencode/deepseek-v4-flash-free) are suitable only when:
+The free tier models (opencode/nemotron-3-ultra-free, opencode/big-pickle, opencode/mimo-v2.5-free, opencode/deepseek-v4-flash-free) are suitable only when:
 
 - Cost must be exactly zero
 - The task is experimental or exploratory
@@ -164,11 +146,11 @@ In `.opencode/devloom/project/config.json`:
 
 ```json
 {
-  "modelRouting": "go-premium"
+  "modelRouting": "go"
 }
 ```
 
-Valid values: `"go-premium"`, `"go-economy"`, `"free"`.
+Valid values: `"go"`, `"go-economy"`, `"deepseek"`, `"go-flash"`, `"free"`.
 
 ### Per-Task Override
 

@@ -81,110 +81,16 @@ DEVLOOM_PROMPT="$SANITIZED_PROMPT" node -e "
 
 if [ -f ".opencode/devloom/config.json" ]; then
   echo "Applying local model config..."
-  node -e "
-    const fs = require('fs');
-    const os = require('os');
-    const c = JSON.parse(fs.readFileSync('.opencode/devloom/config.json','utf8'));
 
-    const PROFILES = {
-      'go-premium': {
-        orchestrator: 'opencode-go/glm-5.1',
-        analyst: 'opencode-go/glm-5.1',
-        architect: 'opencode-go/glm-5.1',
-        developer: 'opencode-go/kimi-k2.6',
-        qa: 'opencode-go/deepseek-v4-pro',
-        documenter: 'opencode-go/glm-5.1',
-        explorer: 'opencode-go/kimi-k2.6',
-        'route-verifier': 'opencode-go/deepseek-v4-pro',
-        'form-verifier': 'opencode-go/deepseek-v4-pro',
-        'a11y-verifier': 'opencode-go/glm-5.1',
-        'api-verifier': 'opencode-go/deepseek-v4-pro',
-        security: 'opencode-go/deepseek-v4-pro',
-        'journey-agent': 'opencode-go/glm-5.1',
-        rca: 'opencode-go/deepseek-v4-pro',
-        repair: 'opencode-go/kimi-k2.6',
-        regression: 'opencode-go/deepseek-v4-pro',
-        recovery: 'opencode-go/deepseek-v4-flash'
-      },
-      'go-economy': {
-        orchestrator: 'opencode-go/deepseek-v4-pro',
-        analyst: 'opencode-go/qwen3.6-plus',
-        architect: 'opencode-go/kimi-k2.6',
-        developer: 'opencode-go/kimi-k2.6',
-        qa: 'opencode-go/deepseek-v4-pro',
-        documenter: 'opencode-go/qwen3.6-plus',
-        explorer: 'opencode-go/deepseek-v4-pro',
-        'route-verifier': 'opencode-go/deepseek-v4-pro',
-        'form-verifier': 'opencode-go/deepseek-v4-pro',
-        'a11y-verifier': 'opencode-go/deepseek-v4-pro',
-        'api-verifier': 'opencode-go/deepseek-v4-pro',
-        security: 'opencode-go/deepseek-v4-pro',
-        'journey-agent': 'opencode-go/deepseek-v4-pro',
-        rca: 'opencode-go/deepseek-v4-pro',
-        repair: 'opencode-go/kimi-k2.6',
-        regression: 'opencode-go/deepseek-v4-pro',
-        recovery: 'opencode-go/deepseek-v4-flash'
-      },
-      'go-flash': {
-        orchestrator: 'opencode-go/deepseek-v4-flash',
-        analyst: 'opencode-go/deepseek-v4-flash',
-        architect: 'opencode-go/deepseek-v4-flash',
-        developer: 'opencode-go/deepseek-v4-flash',
-        qa: 'opencode-go/deepseek-v4-flash',
-        documenter: 'opencode-go/deepseek-v4-flash',
-        explorer: 'opencode-go/deepseek-v4-flash',
-        'route-verifier': 'opencode-go/deepseek-v4-flash',
-        'form-verifier': 'opencode-go/deepseek-v4-flash',
-        'a11y-verifier': 'opencode-go/deepseek-v4-flash',
-        'api-verifier': 'opencode-go/deepseek-v4-flash',
-        security: 'opencode-go/deepseek-v4-flash',
-        'journey-agent': 'opencode-go/deepseek-v4-flash',
-        rca: 'opencode-go/deepseek-v4-flash',
-        repair: 'opencode-go/deepseek-v4-flash',
-        regression: 'opencode-go/deepseek-v4-flash',
-        recovery: 'opencode-go/deepseek-v4-flash'
-      },
-      'free': {
-        orchestrator: 'opencode/big-pickle',
-        analyst: 'opencode/minimax-m3-free',
-        architect: 'opencode/nemotron-3-super-free',
-        developer: 'opencode/minimax-m3-free',
-        qa: 'opencode/minimax-m3-free',
-        documenter: 'opencode/minimax-m3-free',
-        explorer: 'opencode/minimax-m3-free',
-        'route-verifier': 'opencode/minimax-m3-free',
-        'form-verifier': 'opencode/minimax-m3-free',
-        'a11y-verifier': 'opencode/minimax-m3-free',
-        'api-verifier': 'opencode/minimax-m3-free',
-        security: 'opencode/minimax-m3-free',
-        'journey-agent': 'opencode/minimax-m3-free',
-        rca: 'opencode/minimax-m3-free',
-        repair: 'opencode/minimax-m3-free',
-        regression: 'opencode/minimax-m3-free',
-        recovery: 'opencode/minimax-m3-free'
-      }
-    };
+  PROFILE_MJS="$(dirname "$(readlink -f "$0")")/profile.mjs"
+  [ -f "$PROFILE_MJS" ] || PROFILE_MJS="$HOME/.config/opencode/devloom-scripts/profile.mjs"
+  [ -f "$PROFILE_MJS" ] || PROFILE_MJS="$HOME/.config/opencode/commands/profile.mjs"
+  [ -f "$PROFILE_MJS" ] || { echo "profile.mjs not found - reinstall DevLoom"; exit 1; }
 
-    const profile = c.profile || 'go-flash';
-    const profileModels = PROFILES[profile] || PROFILES['go-flash'];
-    const models = { ...profileModels, ...(c.models || {}) };
+  INIT_PROFILE="$(node -e "const c=require('./.opencode/devloom/config.json'); process.stdout.write(c.profile||'auto')" 2>/dev/null || echo auto)"
 
-    for (const [agent, model] of Object.entries(models)) {
-      let finalModel = model.trim();
-      if (!finalModel.startsWith('opencode/') && !finalModel.startsWith('opencode-go/')) {
-        console.warn('Warning: model ' + finalModel + ' has no prefix — auto-adding opencode/');
-        finalModel = 'opencode/' + finalModel;
-      }
-      const f = os.homedir() + '/.config/opencode/agents/devloom-' + agent + '.md';
-      try {
-        let content = fs.readFileSync(f, 'utf8');
-        content = content.replace(/^model:.*/m, 'model: ' + finalModel);
-        fs.writeFileSync(f, content);
-      } catch (e) {
-        console.warn('Warning: could not update ' + f + ' — ' + e.message);
-      }
-    }
-  "
+  node "$PROFILE_MJS" set "$INIT_PROFILE" 2>&1
+  node "$PROFILE_MJS" apply 2>&1
 fi
 ```
 

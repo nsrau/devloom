@@ -5,23 +5,13 @@ LOAD: ~/.config/opencode/devloom-ai/core.dsl|~/.config/opencode/devloom-ai/workf
 FMT:
 `Agent|Purpose|In|Out|Rules|Signal`
 
-AGENTS:
-- Orchestrator|run phases+queue|prompt|state+handoffs|EN|SingleActive|PersistAll|LoadMemory|UseSkills|AppendPromptTask|MaintainPlan|DEVLOOM_DONE
-- Analyst|prompt->requirements|prompt|REQ|NoImpl|NoSpeculation|KeepConstraints|ANALYST_COMPLETE
-- Architect|requirements->plan+tickets|REQ|PLAN+tasks/*|LatestStableCheck|OfficialDocsFirst|TestsInPlan|ARCHITECT_COMPLETE
-- Developer|implement one ticket|ticket+PLAN|code+tests|TDDReq|NoScopeCreep|MinChange|DEVELOPER_COMPLETE
-- QA|verify one ticket|ticket+diff|results|Lint|Tests|Regr|QA_PASS/QA_FAIL
-- Explorer|discover app surface|app url/cmd|exploration report|VisitAll|NoGuess|EXPLORER_COMPLETE
-- RouteVerifier|verify routes|routes|route defects|ROUTE checks|ROUTE_VERIFIER_COMPLETE
-- FormVerifier|verify forms|forms|form defects|FORM checks|FORM_VERIFIER_COMPLETE
-- A11yVerifier|verify accessibility|pages|a11y defects|A11Y checks|A11Y_VERIFIER_COMPLETE
-- ApiVerifier|verify endpoints|api/app|api report|API checks|API_VERIFIER_COMPLETE
-- SecurityVerifier|review CRUD/exposure surfaces|endpoint+dto+component api|security report|SEC checks|SECURITY_REVIEW_COMPLETE
-- JourneyAgent|run user flows|REQ+exploration|journey report|JOURNEY checks|JOURNEY_AGENT_COMPLETE
-- RCA|find root cause|defect+files|cause+fix plan|NoGuess|Symptom!=Fix|RCA_COMPLETE
-- Repair|apply minimal fix|RCA|code+tests|FixRootOnly|REPAIR_COMPLETE
-- Regression|check impact|changed files|results|TargetedFirst|FullGateBeforeDone|REGRESSION_PASS/REGRESSION_FAIL
-- Recovery|recover autonomous failure|phase+error|recovery result|Max3Hyp|EscalateLast|RECOVERY_DONE
+AGENTS (7):
+- Orchestrator|triage+route+queue+inline recovery|prompt|state+handoffs|EN|SingleActive|PersistAll|LoadMemory|UseSkills|AppendPromptTask|MaintainPlan|NoSelfDelegate|DEVLOOM_DONE
+- Planner|prompt->REQ and/or PLAN+tickets|prompt/REQ|REQ|PLAN+tasks/*|NoImpl|CleanArch|LatestStableCheck|OfficialDocsFirst|TestsInPlan|ANALYST_COMPLETE/ARCHITECT_COMPLETE/PLANNER_COMPLETE
+- Developer|implement one ticket OR fix one defect|ticket/defect+PLAN|code+tests|TDDReq|RootCauseFix|NoWorkaround|SOLID|NoScopeCreep|MinChange|DEVELOPER_COMPLETE/REPAIR_COMPLETE
+- QA|verify+review+regression|ticket+diff|results|Lint|Tests|CodeReview|Regr|QA_PASS/QA_FAIL/REGRESSION_PASS/REGRESSION_FAIL
+- Verifier|runtime app verification by scope|scope+app url/cmd|defects/report|UX_BAR|NoGuess|Forensic|VERIFIER_COMPLETE
+- Security|review CRUD/exposure surfaces|endpoint+dto+component api|security report|SEC checks|Forensic|SECURITY_REVIEW_COMPLETE
 - Documenter|update docs+state|done tasks|docs+state|OnlyImplemented|EN|DOCUMENTER_COMPLETE
 
 SHARED:

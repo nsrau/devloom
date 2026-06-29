@@ -8,10 +8,9 @@ const AGENTS_DIR = "agents"
 const AGENT_FILES = readdirSync(AGENTS_DIR).filter((f) => f.startsWith("devloom-") && f.endsWith(".md"))
 
 const ALL_AGENT_NAMES = [
-  "orchestrator", "analyst", "architect", "developer", "qa", "documenter",
-  "explorer", "route-verifier", "form-verifier", "a11y-verifier", "api-verifier",
-  "security", "journey-agent", "rca", "repair", "regression", "recovery"
+  "orchestrator", "planner", "developer", "qa", "verifier", "security", "documenter", "vision"
 ]
+const SUBAGENT_NAMES = ALL_AGENT_NAMES.filter((n) => n !== "orchestrator")
 
 describe("DevLoom operating standard", () => {
   test("package ships workflow assets", () => {
@@ -29,7 +28,7 @@ describe("DevLoom operating standard", () => {
 
   test("protocol includes model-routing documentation", () => {
     const routing = read("protocol/model-routing.md")
-    expect(routing).toContain("go-premium")
+    expect(routing).toContain("go")
     expect(routing).toContain("go-economy")
     expect(routing).toContain("free")
     expect(routing).toContain("GLM 5.1")
@@ -60,8 +59,7 @@ describe("DevLoom operating standard", () => {
     expect(command).toContain("English-only")
     expect(command).toContain("normalize existing project files")
     expect(command).toContain("append every prompt as the last task/todo")
-    expect(command).toContain("go-premium")
-    expect(command).toContain("go-economy")
+    expect(command).toContain("profile.mjs")
     expect(command).toContain("profile")
   })
 
@@ -88,8 +86,8 @@ describe("DevLoom operating standard", () => {
 })
 
 describe("Agent file standards", () => {
-  test("all 17 agent files exist", () => {
-    expect(AGENT_FILES.length).toBe(17)
+  test("exactly 8 agent files exist", () => {
+    expect(AGENT_FILES.length).toBe(8)
   })
 
   test.each(ALL_AGENT_NAMES)("agent devloom-%s has a model field", (name) => {
@@ -112,12 +110,7 @@ describe("Agent file standards", () => {
     expect(content).toMatch(/^OUT: /m)
   })
 
-  test.each([
-    "analyst", "architect", "developer", "qa", "documenter",
-    "explorer", "route-verifier", "form-verifier", "a11y-verifier",
-    "api-verifier", "security", "journey-agent", "rca", "repair", "regression",
-    "recovery"
-  ])("subagent devloom-%s is hidden with subagent mode", (name) => {
+  test.each(SUBAGENT_NAMES)("subagent devloom-%s is hidden with subagent mode", (name) => {
     const content = read(join(AGENTS_DIR, `devloom-${name}.md`))
     expect(content).toMatch(/^mode: subagent/m)
     expect(content).toMatch(/^hidden: true/m)
@@ -144,40 +137,48 @@ describe("Agent file standards", () => {
 })
 
 describe("Profile definitions", () => {
-  test("config profile is go", () => {
+  test("config profile is go with glm orchestrator", () => {
     const config = JSON.parse(read(".opencode/devloom/config.json"))
     expect(config.profile).toBe("go")
     expect(config.models.orchestrator).toBe("opencode-go/glm-5.1")
   })
 
-  test("command devloom.md defines go-premium, go-economy, free profiles", () => {
-    const command = read("commands/devloom.md")
-    expect(command).toContain("go-premium")
-    expect(command).toContain("go-economy")
-    expect(command).toContain("free")
+  test("config models cover exactly the 8 agent roles", () => {
+    const config = JSON.parse(read(".opencode/devloom/config.json"))
+    expect(Object.keys(config.models).sort()).toEqual(
+      ["developer", "documenter", "orchestrator", "planner", "qa", "security", "verifier", "vision"]
+    )
   })
 
-  test("model prefix normalization is implemented", () => {
+  test("command devloom.md delegates to profile.mjs", () => {
     const command = read("commands/devloom.md")
-    expect(command).toContain("auto-adding opencode/")
-    expect(command).toContain("startsWith('opencode/')")
+    expect(command).toContain("PROFILE_MJS")
+    expect(command).toContain("profile.mjs")
+    expect(command).toContain("set")
+    expect(command).toContain("apply")
   })
 
-  test("local model overrides win over profile defaults", () => {
-    const command = read("commands/devloom.md")
-    expect(command).toContain("...profileModels, ...(c.models || {})")
+  test("model prefix validation is implemented in profile manager", () => {
+    const pm = read("scripts/profile.mjs")
+    expect(pm).toContain('startsWith("opencode/")')
+    expect(pm).toContain('startsWith("opencode-go/")')
+  })
+
+  test("profile manager supports per-role model overrides", () => {
+    const pm = read("scripts/profile.mjs")
+    expect(pm).toContain("overrides")
   })
 })
 
 describe("README and GUIDE consistency", () => {
-  test("README mentions all 17 agents", () => {
+  test("README mentions all 8 agents", () => {
     const readme = read("README.md")
     for (const name of ALL_AGENT_NAMES) {
       expect(readme).toContain(name)
     }
   })
 
-  test("GUIDE mentions all 17 agents", () => {
+  test("GUIDE mentions all 8 agents", () => {
     const guide = read("GUIDE.md")
     for (const name of ALL_AGENT_NAMES) {
       expect(guide).toContain(name)
@@ -268,14 +269,14 @@ describe("Profile manager (scripts/profile.mjs)", () => {
 describe("Profile detection and fallback behavior", () => {
   test("all go profile agents have valid model ids", () => {
     const pm = read("scripts/profile.mjs")
-    // Verify all 16 agents are in the go profile
+    // Verify all 7 agent roles are in the go profile
     const lines = pm.split("\n")
     const goSectionStart = lines.findIndex(l => l.includes("go:"))
     let goModels = 0
     for (let i = goSectionStart; i < lines.length && !lines[i].includes("go-economy"); i++) {
       if (lines[i].includes("opencode-go/")) goModels++
     }
-    expect(goModels).toBeGreaterThanOrEqual(16)
+    expect(goModels).toBeGreaterThanOrEqual(8)
   })
 
   test("configuration stores resolved profile metadata", () => {
@@ -287,14 +288,14 @@ describe("Profile detection and fallback behavior", () => {
     expect(config).toHaveProperty("overrides")
   })
 
-  test("free profile has all 16 agents mapped", () => {
+  test("free profile has all 8 agents mapped", () => {
     const pm = read("scripts/profile.mjs")
     // Count all FREE_ROLE_MAP entries
     const roleLines = pm.split("\n").filter(l => l.includes("FREE_ROLE_MAP")).length
     expect(roleLines).toBeGreaterThan(0)
-    const freeRoles = pm.match(/"[a-z-]+": "planning|implementation|verification|documentation"/g)
+    const freeRoles = pm.match(/[a-z-]+: "planning|implementation|verification|documentation"/g)
     expect(freeRoles).not.toBeNull()
-    expect(freeRoles!.length).toBeGreaterThanOrEqual(16)
+    expect(freeRoles!.length).toBeGreaterThanOrEqual(7) // vision role uses "vision" key, not in this regex
   })
 })
 

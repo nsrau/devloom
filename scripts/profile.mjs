@@ -2,120 +2,77 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, cpSync } from "fs"
 import { homedir } from "os"
 import { resolve, dirname } from "path"
+import { fileURLToPath } from "url"
 import { execSync } from "child_process"
 
 const CONFIG_PATH = ".opencode/devloom/config.json"
 const AGENTS_DIR = homedir() + "/.config/opencode/agents"
 const SOURCE_AGENTS_DIR = resolve(dirname(new URL(import.meta.url).pathname), "..", "agents")
 
-const PROFILES = {
+export const PROFILES = {
   go: {
     orchestrator: "opencode-go/glm-5.1",
-    analyst: "opencode-go/glm-5.1",
-    architect: "opencode-go/glm-5.1",
+    planner: "opencode-go/glm-5.1",
     developer: "opencode-go/kimi-k2.6",
     qa: "opencode-go/deepseek-v4-pro",
-    documenter: "opencode-go/glm-5.1",
-    explorer: "opencode-go/kimi-k2.6",
-    "route-verifier": "opencode-go/deepseek-v4-pro",
-    "form-verifier": "opencode-go/deepseek-v4-pro",
-    "a11y-verifier": "opencode-go/glm-5.1",
-    "api-verifier": "opencode-go/deepseek-v4-pro",
+    verifier: "opencode-go/deepseek-v4-pro",
     security: "opencode-go/deepseek-v4-pro",
-    "journey-agent": "opencode-go/glm-5.1",
-    rca: "opencode-go/deepseek-v4-pro",
-    repair: "opencode-go/kimi-k2.6",
-    regression: "opencode-go/deepseek-v4-pro",
-    recovery: "opencode-go/deepseek-v4-flash"
+    documenter: "opencode-go/glm-5.1",
+    vision: "opencode-go/minimax-m3"
   },
   "go-economy": {
     orchestrator: "opencode-go/deepseek-v4-pro",
-    analyst: "opencode-go/qwen3.6-plus",
-    architect: "opencode-go/kimi-k2.6",
+    planner: "opencode-go/kimi-k2.6",
     developer: "opencode-go/kimi-k2.6",
     qa: "opencode-go/deepseek-v4-pro",
-    documenter: "opencode-go/qwen3.6-plus",
-    explorer: "opencode-go/deepseek-v4-pro",
-    "route-verifier": "opencode-go/deepseek-v4-pro",
-    "form-verifier": "opencode-go/deepseek-v4-pro",
-    "a11y-verifier": "opencode-go/qwen3.6-plus",
-    "api-verifier": "opencode-go/deepseek-v4-pro",
+    verifier: "opencode-go/deepseek-v4-pro",
     security: "opencode-go/deepseek-v4-pro",
-    "journey-agent": "opencode-go/qwen3.6-plus",
-    rca: "opencode-go/deepseek-v4-pro",
-    repair: "opencode-go/kimi-k2.6",
-    regression: "opencode-go/deepseek-v4-pro",
-    recovery: "opencode-go/deepseek-v4-flash",
-    documenter: "opencode-go/qwen3.6-plus"
+    documenter: "opencode-go/qwen3.6-plus",
+    vision: "opencode-go/minimax-m3"
   },
   deepseek: {
     orchestrator: "opencode-go/deepseek-v4-pro",
-    analyst: "opencode-go/deepseek-v4-pro",
-    architect: "opencode-go/deepseek-v4-pro",
+    planner: "opencode-go/deepseek-v4-pro",
     developer: "opencode-go/deepseek-v4-pro",
     qa: "opencode-go/deepseek-v4-pro",
-    documenter: "opencode-go/deepseek-v4-flash",
-    explorer: "opencode-go/deepseek-v4-flash",
-    "route-verifier": "opencode-go/deepseek-v4-flash",
-    "form-verifier": "opencode-go/deepseek-v4-flash",
-    "a11y-verifier": "opencode-go/deepseek-v4-pro",
-    "api-verifier": "opencode-go/deepseek-v4-flash",
+    verifier: "opencode-go/deepseek-v4-flash",
     security: "opencode-go/deepseek-v4-pro",
-    "journey-agent": "opencode-go/deepseek-v4-pro",
-    rca: "opencode-go/deepseek-v4-pro",
-    repair: "opencode-go/deepseek-v4-pro",
-    regression: "opencode-go/deepseek-v4-flash",
-    recovery: "opencode-go/deepseek-v4-flash"
+    documenter: "opencode-go/deepseek-v4-flash",
+    vision: "opencode-go/minimax-m3"
   },
   "go-flash": {
     orchestrator: "opencode-go/deepseek-v4-flash",
-    analyst: "opencode-go/deepseek-v4-flash",
-    architect: "opencode-go/deepseek-v4-flash",
+    planner: "opencode-go/deepseek-v4-flash",
     developer: "opencode-go/deepseek-v4-flash",
     qa: "opencode-go/deepseek-v4-flash",
-    documenter: "opencode-go/deepseek-v4-flash",
-    explorer: "opencode-go/deepseek-v4-flash",
-    "route-verifier": "opencode-go/deepseek-v4-flash",
-    "form-verifier": "opencode-go/deepseek-v4-flash",
-    "a11y-verifier": "opencode-go/deepseek-v4-flash",
-    "api-verifier": "opencode-go/deepseek-v4-flash",
+    verifier: "opencode-go/deepseek-v4-flash",
     security: "opencode-go/deepseek-v4-flash",
-    "journey-agent": "opencode-go/deepseek-v4-flash",
-    rca: "opencode-go/deepseek-v4-flash",
-    repair: "opencode-go/deepseek-v4-flash",
-    regression: "opencode-go/deepseek-v4-flash",
-    recovery: "opencode-go/deepseek-v4-flash"
+    documenter: "opencode-go/deepseek-v4-flash",
+    vision: "opencode-go/minimax-m3"
   }
 }
 
-const FREE_CANDIDATES_BY_ROLE = {
+export const FREE_CANDIDATES_BY_ROLE = {
   planning: ["opencode/nemotron-3-ultra-free", "opencode/big-pickle", "opencode/mimo-v2.5-free", "opencode/deepseek-v4-flash-free"],
   implementation: ["opencode/mimo-v2.5-free", "opencode/deepseek-v4-flash-free", "opencode/nemotron-3-ultra-free", "opencode/big-pickle"],
   verification: ["opencode/deepseek-v4-flash-free", "opencode/mimo-v2.5-free", "opencode/nemotron-3-ultra-free", "opencode/big-pickle"],
-  documentation: ["opencode/nemotron-3-ultra-free", "opencode/mimo-v2.5-free", "opencode/big-pickle", "opencode/deepseek-v4-flash-free"]
+  documentation: ["opencode/nemotron-3-ultra-free", "opencode/mimo-v2.5-free", "opencode/big-pickle", "opencode/deepseek-v4-flash-free"],
+  // ponytail: no free opencode/ models support vision; use opencode-go multimodal fallbacks
+  vision: ["opencode-go/minimax-m3", "opencode-go/glm-5.2", "opencode-go/kimi-k2.6"]
 }
 
-const FREE_ROLE_MAP = {
+export const FREE_ROLE_MAP = {
   orchestrator: "planning",
-  analyst: "planning",
-  architect: "planning",
+  planner: "planning",
   developer: "implementation",
   qa: "verification",
-  explorer: "implementation",
-  "route-verifier": "verification",
-  "form-verifier": "verification",
-  "a11y-verifier": "verification",
-  "api-verifier": "verification",
+  verifier: "verification",
   security: "verification",
-  "journey-agent": "planning",
-  rca: "verification",
-  repair: "implementation",
-  regression: "verification",
-  recovery: "verification",
-  documenter: "documentation"
+  documenter: "documentation",
+  vision: "vision"
 }
 
-const ALL_AGENTS = Object.keys(FREE_ROLE_MAP)
+export const ALL_AGENTS = Object.keys(FREE_ROLE_MAP)
 
 function readJson(path, fallback = null) {
   try { return JSON.parse(readFileSync(path, "utf8")) } catch { return fallback }
@@ -135,22 +92,23 @@ function run(cmd) {
   }
 }
 
-function detectAvailableModels() {
+export function detectAvailableModels() {
   const output = run("opencode models --refresh 2>/dev/null && opencode models 2>/dev/null")
   if (!output) return []
-  return output.split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("lmstudio/"))
+  const lines = output.split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("lmstudio/"))
+  return [...new Set(lines)]
 }
 
-function hasGoModels(available) {
+export function hasGoModels(available) {
   return available.some(m => m.startsWith("opencode-go/"))
 }
 
-function getFreeModels(available) {
+export function getFreeModels(available) {
   return available.filter(m => m.startsWith("opencode/") && m.endsWith("-free") || m === "opencode/big-pickle")
     .concat(available.filter(m => m.startsWith("opencode-go/free-")))
 }
 
-function pickBestFree(available, role) {
+export function pickBestFree(available, role) {
   const candidates = FREE_CANDIDATES_BY_ROLE[role] || FREE_CANDIDATES_BY_ROLE.verification
   for (const c of candidates) {
     if (available.includes(c)) return c
@@ -166,7 +124,7 @@ function pickBestFree(available, role) {
   return freeModels.length > 0 ? freeModels[0] : "opencode/deepseek-v4-flash-free"
 }
 
-function resolveFreeProfile(available) {
+export function resolveFreeProfile(available) {
   const models = {}
   for (const agent of ALL_AGENTS) {
     const role = FREE_ROLE_MAP[agent]
@@ -175,7 +133,7 @@ function resolveFreeProfile(available) {
   return models
 }
 
-function validateModels(models, available) {
+export function validateModels(models, available) {
   const unavailable = []
   for (const [agent, model] of Object.entries(models)) {
     const short = model.startsWith("opencode-go/") || model.startsWith("opencode/")
@@ -196,7 +154,7 @@ function containsKey(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj, key)
 }
 
-function applyFallbacks(models, unavailable, available) {
+export function applyFallbacks(models, unavailable, available) {
   const result = { ...models }
   const fallbacks = {}
   for (const { agent, model } of unavailable) {
@@ -235,7 +193,7 @@ function ensureAgentFiles() {
   }
 }
 
-function applyModelsToAgentFiles(models) {
+export function applyModelsToAgentFiles(models) {
   ensureAgentFiles()
   for (const [agent, model] of Object.entries(models)) {
     const f = resolve(AGENTS_DIR, `devloom-${agent}.md`)
@@ -248,7 +206,7 @@ function applyModelsToAgentFiles(models) {
   }
 }
 
-function cmdSet(profileName) {
+export function cmdSet(profileName) {
   const available = detectAvailableModels()
   const hasGo = hasGoModels(available)
 
@@ -336,7 +294,7 @@ function cmdSet(profileName) {
   return config
 }
 
-function cmdCurrent() {
+export function cmdCurrent() {
   const config = readConfig()
   if (!config || !config.profile) {
     console.log("No DevLoom profile configured yet.")
@@ -369,7 +327,7 @@ function cmdCurrent() {
   }
 }
 
-function cmdValidate() {
+export function cmdValidate() {
   const available = detectAvailableModels()
   const config = readConfig()
   if (!config || !config.models) {
@@ -393,7 +351,7 @@ function cmdValidate() {
   }
 }
 
-function cmdApply() {
+export function cmdApply() {
   const config = readConfig()
   if (!config || !config.profile) {
     console.error("No profile configured. Run /devloom-init or /devloom-auto first.")
@@ -425,7 +383,7 @@ function cmdApply() {
   }
 }
 
-function cmdDetect() {
+export function cmdDetect() {
   const available = detectAvailableModels()
   const hasGo = hasGoModels(available)
 
@@ -478,4 +436,5 @@ function main() {
   }
 }
 
-main()
+const isMain = process.argv[1] ? fileURLToPath(import.meta.url) === resolve(process.argv[1]) : false
+if (isMain) main()

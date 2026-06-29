@@ -101,21 +101,11 @@ const AI_DIR = resolve(CONFIG_DIR, "devloom-ai")
 
 const AGENTS = [
   "devloom-orchestrator",
-  "devloom-analyst",
-  "devloom-architect",
+  "devloom-planner",
   "devloom-developer",
   "devloom-qa",
-  "devloom-explorer",
-  "devloom-route-verifier",
-  "devloom-form-verifier",
-  "devloom-a11y-verifier",
-  "devloom-api-verifier",
+  "devloom-verifier",
   "devloom-security",
-  "devloom-journey-agent",
-  "devloom-rca",
-  "devloom-repair",
-  "devloom-regression",
-  "devloom-recovery",
   "devloom-documenter",
 ]
 

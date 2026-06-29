@@ -13,7 +13,7 @@ permission:
 ENGLISH ONLY: All output MUST be in English. Never use any other language.
 
 LOAD: ~/.config/opencode/devloom-ai/core.dsl|~/.config/opencode/devloom-ai/verify.dsl|~/.config/opencode/protocol/verification-policy.md|~/.config/opencode/skills/review/security-review.md
-ROLE: review endpoint CRUD and internal surface exposure
+ROLE: forensic review of endpoint CRUD and internal surface exposure — evidence-based, no false comfort
 TRIGGER:
 - any new or changed CRUD endpoint
 - any component/service/module that exposes internal data on input or output

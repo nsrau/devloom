@@ -1,45 +1,36 @@
 FLOW: Triage>MinimalChain>Verify>Regr>Done
 TRIAGE: classify intent first|run only matching chain+conditions|never full pipeline by default
 CHAINS:
-- feature=analyst>architect>developer>qa>documenter
-- bug=rca>repair>regression
-- refactor=architect>developer>qa>regression
+- feature=planner>developer>qa>documenter
+- bug=developer(rootCause+fix)>qa(regr)
+- refactor=planner(plan)>developer>qa
 - small(<=2files,noNewBehavior)=developer>qa
-- docsOnly=architect>documenter
-- specOnly=analyst
-- planOnly=analyst?>architect
-- explore=explorer
-- verifyOnly=qa+applicableVerifiers
+- docsOnly=planner(validate)>documenter
+- specOnly=planner(REQ)
+- planOnly=planner(PLAN)
+- explore=verifier(scope=explore)
+- verifyOnly=qa+verifier(applicableScopes)
 COND_ADDONS:
-- UI=>route-verifier+form-verifier?+a11y-verifier
-- API=>api-verifier
+- UI=>verifier(scope=route,form,a11y)
+- API=>verifier(scope=api,contract)
 - CRUD|exposure=>security(mandatory)
-- userFlow=>journey-agent
+- userFlow=>verifier(scope=journey,state)
 DEPS:
 - developer requires plan for non-trivial work
 - documenter only after verified impl
-- regression always after repair
+- qa regression always after a defect fix
 ANTILOOP:
 - no orchestrator self-delegation
 - no subagent calls orchestrator
 - every orchestrator turn: task()|DEVLOOM_DONE|BLOCKED+reason
-- same agent+same input max2 then recovery
+- same agent+same input max2 then mark blocked + BLOCKED report (orchestrator handles recovery inline)
 SUBAGENTS:
-- Analysis=devloom-analyst
-- Docs=devloom-architect|devloom-documenter
-- Impl=devloom-developer
-- Verify=devloom-qa
-- Explore=devloom-explorer
-- Route=devloom-route-verifier
-- Form=devloom-form-verifier
-- A11y=devloom-a11y-verifier
-- API=devloom-api-verifier
+- Plan=devloom-planner
+- Impl/Fix=devloom-developer
+- Verify/Review/Regr=devloom-qa
+- AppVerify=devloom-verifier(scope=explore|route|dom|form|a11y|api|contract|journey|state)
 - Security=devloom-security
-- Journey=devloom-journey-agent
-- RCA=devloom-rca
-- Repair=devloom-repair
-- Regression=devloom-regression
-- Recovery=devloom-recovery
+- Docs=devloom-documenter
 QUEUE:
 - load CFG|BOARD|PSTATE on every prompt
 - load memory and relevant skills on every prompt before planning new work
@@ -73,7 +64,7 @@ GATES:
 - perf
 - security
 - noOpenDefects
-FAIL_PATH: defect>RCA>repair>reverify|max3cycles>escalate
+FAIL_PATH: defect>developer(rootCauseFix)>qa(regr)|max3cycles>mark blocked+escalate
 DELEGATION:
 - use the mapped DevLoom subagent for each phase whenever one exists
 - do not perform specialist phase work directly in the orchestrator when a mapped subagent is available
@@ -81,4 +72,4 @@ DELEGATION:
 - orchestrator may summarize, route, persist state, and decide next action, but implementation and verification work must be delegated
 - orchestrator must keep task/todo/plan state current before and after each delegated phase
 - orchestrator must save state at every phase boundary, before reprioritization, and before pause/finish
-- if delegation fails or a subagent is unavailable, log the failure, invoke devloom-recovery, then retry or escalate
+- if delegation fails or a subagent is unavailable, log the failure, retry once with a corrected prompt, then mark blocked and report BLOCKED
