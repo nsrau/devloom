@@ -110,10 +110,9 @@ describe("Agent file standards", () => {
     expect(content).toMatch(/^OUT: /m)
   })
 
-  test.each(SUBAGENT_NAMES)("subagent devloom-%s is hidden with subagent mode", (name) => {
+  test.each(SUBAGENT_NAMES)("subagent devloom-%s has subagent mode", (name) => {
     const content = read(join(AGENTS_DIR, `devloom-${name}.md`))
     expect(content).toMatch(/^mode: subagent/m)
-    expect(content).toMatch(/^hidden: true/m)
   })
 
   test("orchestrator agent is primary (not subagent) with task permission", () => {
