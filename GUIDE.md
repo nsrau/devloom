@@ -108,6 +108,7 @@ Start OpenCode and open the command palette by typing `/`:
 /devloom-resume   → Resume an interrupted execution
 /devloom-init     → Initialize a project for DevLoom
 /devloom-save     → Persist current state and pause for the next command
+/devloom-loop     → Start/stop/status for loop engineering patterns
 ```
 
 Or check installed files directly:
@@ -481,6 +482,38 @@ without starting a weave:
 ```
 /devloom-init
 ```
+
+---
+
+## Loop Engineering
+
+DevLoom ships a cadence-driven execution system for recurring agent tasks. Seven
+loop patterns are available out of the box: `daily-triage`, `pr-babysitter`,
+`ci-sweeper`, `dependency-sweeper`, `changelog-drafter`, `post-merge-cleanup`,
+and `issue-triage`.
+
+Each pattern has a matching skill under `skills/loop/` and a safety level:
+
+- **L1 (report-only)** — observe and report, no modifications
+- **L2 (assisted)** — fix in an isolated worktree with verifier approval
+- **L3 (unattended)** — full autonomous fix-and-close cycle
+
+Start a loop from within OpenCode:
+
+```
+/devloom-loop start daily-triage --cadence "0 8 * * 1-5" --level L2
+```
+
+Run a single tick manually from the terminal:
+
+```bash
+node scripts/loop-run.mjs --pattern daily-triage
+```
+
+The loop system includes a token budget circuit breaker: if a run exceeds its
+allocated budget, the loop auto-pauses and logs the overage. Run
+`/devloom-loop status` to inspect current loop state, last run, and budget
+consumption.
 
 ---
 

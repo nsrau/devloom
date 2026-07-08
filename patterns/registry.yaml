@@ -1,0 +1,52 @@
+# Loop Pattern Registry
+# Each pattern defines: cadence, safety level, agent chain, token cost estimate
+v: 1
+patterns:
+  - id: daily-triage
+    cadence: "0 6 * * *"
+    level: L1
+    agents: [verifier, documenter]
+    cost_estimate: 50000
+    description: "Report repo health every morning"
+  - id: pr-babysitter
+    cadence: "*/15 * * * *"
+    level: L2
+    agents: [planner, developer, qa]
+    cost_estimate: 200000
+    description: "Watch long-running PRs and push them forward"
+  - id: ci-sweeper
+    cadence: "*/10 * * * *"
+    level: L2
+    agents: [developer, qa]
+    cost_estimate: 300000
+    description: "Detect and fix CI failures"
+  - id: dependency-sweeper
+    cadence: "0 */6 * * *"
+    level: L2
+    agents: [verifier, developer]
+    cost_estimate: 100000
+    description: "Patch-only dependency updates"
+  - id: changelog-drafter
+    cadence: "0 8 * * *"
+    level: L1
+    agents: [documenter]
+    cost_estimate: 30000
+    description: "Draft release notes from recent commits"
+  - id: post-merge-cleanup
+    cadence: "0 3 * * *"
+    level: L1
+    agents: [developer, qa]
+    cost_estimate: 40000
+    description: "Clean up stale branches and worktrees"
+  - id: issue-triage
+    cadence: "0 */2 * * *"
+    level: L1
+    agents: [planner]
+    cost_estimate: 60000
+    description: "Propose labels and priorities for new issues"
+  - id: design-audit
+    cadence: "on-demand"
+    level: L1
+    agents: [verifier]
+    cost_estimate: 150000
+    description: "Comprehensive UI/UX design audit with automated fix loop"

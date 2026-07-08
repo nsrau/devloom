@@ -3,6 +3,8 @@ import { existsSync } from "node:fs"
 import { join } from "node:path"
 import type { Hooks, PluginInput } from "@opencode-ai/plugin"
 import { ensureProjectWorkspace } from "./bootstrap.js"
+import { autoGenerateContextIfMissing } from "./context.js"
+import { ensureLoopWorkspace } from "./loop.js"
 import {
   ORCHESTRATOR_AGENT,
   buildGuardText,
@@ -17,16 +19,19 @@ const COMPACTION_CONTEXT = [
   "DevLoom is active in this project. The summary MUST preserve:",
   '(1) routing rule — all code work is delegated via task(subagent:"devloom-orchestrator");',
   "(2) current pipeline state from .opencode/devloom/project/state.json and board.json (phase, active ticket, next step);",
-  "(3) pending pipeline phases and open defects.",
+  "(3) pending pipeline phases and open defects;",
+  "(4) active git worktrees under .devloom-worktrees/ (branches, agents, merge status) — never lose track of parallel agent work;",
+   "(5) project context at .opencode/devloom/context/ — tech stack, conventions, security, examples (auto-generated, pattern-aware code generation).",
+   "(6) loop engineering state at .opencode/devloom/loop/ — pattern, cadence, level, budget, run history.",
 ].join(" ")
 
 function createLifecycleHooks(_ctx: PluginInput): Hooks {
   const debug = env.DEVLOOM_DEBUG === "1"
   const rootDir = typeof _ctx.directory === "string" ? _ctx.directory : ""
-  // Only normalize an existing workspace; first-time creation belongs to /devloom
-  // so globally-loaded plugins don't litter unrelated repos.
   if (rootDir.length > 0 && existsSync(join(rootDir, ".opencode", "devloom"))) {
     ensureProjectWorkspace(rootDir)
+    autoGenerateContextIfMissing(rootDir)
+    ensureLoopWorkspace(rootDir)
   }
 
   const agentBySession = new Map<string, string>()

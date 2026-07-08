@@ -1,5 +1,16 @@
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
+import { readWorktreeSummary } from "./worktree.js"
+import { contextSummaryString } from "./context.js"
+import { readLoopStateSummary } from "./loop.js"
+import { readConstraints, buildConstraintsGuard } from "./constraints.js"
+
+function constraintsSummary(rootDir: string): string {
+  const loop = readLoopStateSummary(rootDir)
+  if (loop.includes("loop=inactive")) return ""
+  const constraints = readConstraints(rootDir)
+  return buildConstraintsGuard(constraints)
+}
 
 export const ORCHESTRATOR_AGENT = "devloom-orchestrator"
 
@@ -27,7 +38,13 @@ export function readStateSummary(rootDir: string): string {
   if (!state.phase) return "unbootstrapped"
   const doing = Array.isArray(board.cols?.doing) ? board.cols.doing.length : 0
   const backlog = Array.isArray(board.cols?.backlog) ? board.cols.backlog.length : 0
-  return `phase=${state.phase} ticket=${state.ticket || "-"} next=${state.next || "-"} doing=${doing} backlog=${backlog}`
+  const wt = readWorktreeSummary(rootDir)
+  const loopSummary = readLoopStateSummary(rootDir)
+  const ctx = contextSummaryString(rootDir)
+  const parts = [`phase=${state.phase} ticket=${state.ticket || "-"} next=${state.next || "-"} doing=${doing} backlog=${backlog} ${wt} ${loopSummary} ${ctx}`]
+  const constrGuard = constraintsSummary(rootDir)
+  if (constrGuard) parts.push(constrGuard)
+  return parts.join(" ")
 }
 
 export function buildGuardText(agent: string | undefined, stateSummary: string): string | null {

@@ -12,6 +12,7 @@
     "commands",
     "skills",
     "protocol",
+    "patterns",
     "project",
     "scripts",
     "postinstall.mjs",

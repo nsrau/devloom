@@ -77,6 +77,8 @@ describe("createLifecycleHooks", () => {
     await hooks["experimental.session.compacting"]!({ sessionID: "sess-1" }, output as any)
     expect(output.context[0]).toContain("devloom-orchestrator")
     expect(output.context[0]).toContain("state.json")
+    expect(output.context[0]).toContain("worktrees")
+    expect(output.context[0]).toContain("context")
   })
 
   test("blocks orchestrator file writes outside devloom state dir", async () => {

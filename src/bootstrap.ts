@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
+import { ensureLoopWorkspace } from "./loop.js"
 
 type ProjectState = {
   v: number
@@ -160,6 +161,8 @@ export function ensureProjectWorkspace(rootDir: string) {
   writeFileSync(configPath, JSON.stringify(config))
   writeFileSync(boardPath, JSON.stringify(board))
   writeFileSync(statePath, JSON.stringify(state))
+
+  ensureLoopWorkspace(rootDir)
 
   return {
     config,

@@ -37,7 +37,10 @@ describe("readStateSummary", () => {
       join(projectRoot, "board.json"),
       JSON.stringify({ cols: { doing: ["T-1"], backlog: ["T-2", "T-3"] } })
     )
-    expect(readStateSummary(dir)).toBe("phase=impl ticket=T-1 next=verify doing=1 backlog=2")
+    const summary = readStateSummary(dir)
+    expect(summary).toContain("phase=impl ticket=T-1 next=verify doing=1 backlog=2")
+    expect(summary).toContain("worktrees=")
+    expect(summary).toContain("context=")
   })
 
   test("tolerates malformed board file", () => {
@@ -45,7 +48,10 @@ describe("readStateSummary", () => {
     mkdirSync(projectRoot, { recursive: true })
     writeFileSync(join(projectRoot, "state.json"), JSON.stringify({ phase: "idle" }))
     writeFileSync(join(projectRoot, "board.json"), "{not json")
-    expect(readStateSummary(dir)).toBe("phase=idle ticket=- next=- doing=0 backlog=0")
+    const summary = readStateSummary(dir)
+    expect(summary).toContain("phase=idle ticket=- next=- doing=0 backlog=0")
+    expect(summary).toContain("worktrees=")
+    expect(summary).toContain("context=")
   })
 })
 

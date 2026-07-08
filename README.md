@@ -215,6 +215,53 @@ Human intervention is always the last resort.
 
 ---
 
+## Loop Engineering
+
+**Stop prompting the agent. Design the loop that prompts the agent.**
+
+DevLoom's loop engineering system moves beyond one-shot prompts to recurring,
+cadence-driven agent execution. A configured loop runs a pattern on a schedule,
+with automatic circuit-breaking via token budget limits.
+
+### Loop patterns (7 built-in)
+
+| Pattern | Purpose |
+|---------|---------|
+| `daily-triage` | Review new issues, classify, route to planner |
+| `pr-babysitter` | Check open PRs for CI status, staleness, conflicts |
+| `ci-sweeper` | Retry or investigate failed CI jobs |
+| `dependency-sweeper` | Scan for outdated/vulnerable dependencies |
+| `changelog-drafter` | Generate changelog from recent commits |
+| `post-merge-cleanup` | Clean up merged branches, update tickets |
+| `issue-triage` | Triage issue queue with classification and routing |
+
+### Safety levels
+
+| Level | Behavior |
+|-------|----------|
+| L1 (report-only) | Observe and report — no file modifications |
+| L2 (assisted) | Fix with worktree isolation + verifier approval |
+| L3 (unattended) | Full autonomous fix-and-close cycle |
+
+### Usage
+
+Start a loop tick manually:
+
+```bash
+node scripts/loop-run.mjs --pattern daily-triage
+```
+
+In OpenCode, start a background loop:
+
+```
+/devloom-loop start daily-triage --cadence "0 8 * * 1-5" --level L2
+```
+
+Each tick respects the token budget circuit breaker — if a run exceeds its
+budget, the loop pauses and logs the overage before the next scheduled tick.
+
+---
+
 ## Defect Registry
 
 All discovered defects are tracked in `.opencode/devloom/defects.json`:
@@ -440,6 +487,15 @@ devloom/
 +-- SECURITY.md
 +-- package.json
 ```
+---
+
+## Acknowledgements
+
+DevLoom's skill structure and lifecycle-driven workflow drew inspiration from
+[addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) and the
+broader pattern of packaging senior-engineering workflows as agent-readable
+skills.
+
 ---
 
 ## License

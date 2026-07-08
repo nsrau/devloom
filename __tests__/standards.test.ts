@@ -1,5 +1,5 @@
 import { describe, expect, test } from "@jest/globals"
-import { readFileSync, readdirSync } from "fs"
+import { readFileSync, readdirSync, statSync } from "fs"
 import { join } from "path"
 
 const read = (path: string) => readFileSync(path, "utf8")
@@ -308,5 +308,45 @@ describe("Package and build", () => {
     const pi = read("postinstall.mjs")
     expect(pi).toContain("Installing profile manager scripts")
     expect(pi).toContain("devloom-scripts")
+  })
+})
+
+describe("MVI enforcement (Minimal Viable Information)", () => {
+  const MVI_MAX_LINES = 200
+
+  test("all skill files are under 200 lines", () => {
+    const skillDir = "skills"
+    const skillFiles: string[] = []
+    const collectFiles = (dir: string) => {
+      const entries = readdirSync(dir)
+      for (const entry of entries) {
+        const path = join(dir, entry)
+        const stat = statSync(path)
+        if (stat.isDirectory()) {
+          collectFiles(path)
+        } else if (entry.endsWith(".md")) {
+          skillFiles.push(path)
+        }
+      }
+    }
+    collectFiles(skillDir)
+    expect(skillFiles.length).toBeGreaterThan(0)
+    for (const file of skillFiles) {
+      const content = read(file)
+      const lines = content.split("\n").length
+      expect(lines).toBeLessThanOrEqual(MVI_MAX_LINES)
+    }
+  })
+
+  test("all protocol files are under 200 lines", () => {
+    const protocolDir = "protocol"
+    const entries = readdirSync(protocolDir)
+    for (const entry of entries) {
+      if (entry.endsWith(".md")) {
+        const content = read(join(protocolDir, entry))
+        const lines = content.split("\n").length
+        expect(lines).toBeLessThanOrEqual(MVI_MAX_LINES)
+      }
+    }
   })
 })
