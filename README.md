@@ -56,7 +56,7 @@ pipeline by default — only the agents the task actually needs.
 7 agents — the orchestrator routes; six surgical specialists do the work. Each loads exactly one skill.
 
 | Agent | Mode | Role | Skill | Replaces |
-|---|---|---|---|---|
+|---|---|---|---|---|---|
 | `devloom-orchestrator` | `primary` | Triage, route, state, completion gate | — | — |
 | `devloom-planner` | `subagent` | Prompt -> requirements + CleanArch plan + tickets | `plan/planning` | analyst, architect |
 | `devloom-developer` | `subagent` | Implement ticket / root-cause fix (TDD, SOLID) | `build/development` | developer, rca, repair |
@@ -309,13 +309,14 @@ Create `.opencode/devloom/config.json`:
 ```json
 {
   "models": {
-    "orchestrator": "opencode-go/glm-5.1",
-    "planner": "opencode-go/glm-5.1",
-    "developer": "opencode-go/kimi-k2.6",
+    "orchestrator": "opencode-go/glm-5.2",
+    "planner": "opencode-go/glm-5.2",
+    "developer": "opencode-go/kimi-k2.7-code",
     "qa": "opencode-go/deepseek-v4-pro",
     "verifier": "opencode-go/deepseek-v4-pro",
     "security": "opencode-go/deepseek-v4-pro",
-    "documenter": "opencode-go/glm-5.1"
+    "documenter": "opencode-go/qwen3.7-plus",
+    "vision": "opencode-go/minimax-m3"
   }
 }
 ```
@@ -328,47 +329,37 @@ Uses faster, lower-cost Go models while maintaining strong results:
 {
   "models": {
     "orchestrator": "opencode-go/deepseek-v4-pro",
-    "planner": "opencode-go/kimi-k2.6",
-    "developer": "opencode-go/kimi-k2.6",
+    "planner": "opencode-go/kimi-k2.7-code",
+    "developer": "opencode-go/kimi-k2.7-code",
     "qa": "opencode-go/deepseek-v4-pro",
     "verifier": "opencode-go/deepseek-v4-pro",
     "security": "opencode-go/deepseek-v4-pro",
-    "documenter": "opencode-go/qwen3.6-plus"
+    "documenter": "opencode-go/qwen3.6-plus",
+    "vision": "opencode-go/minimax-m3"
   }
 }
 ```
 
 ### free profile
 
-Uses only OpenCode Free models (zero cost):
-
-```json
-{
-  "models": {
-    "orchestrator": "opencode/big-pickle",
-    "planner": "opencode/nemotron-3-ultra-free",
-    "developer": "opencode/nemotron-3-ultra-free",
-    "qa": "opencode/nemotron-3-ultra-free",
-    "verifier": "opencode/nemotron-3-ultra-free",
-    "security": "opencode/nemotron-3-ultra-free",
-    "documenter": "opencode/nemotron-3-ultra-free"
-  }
-}
-```
+Uses only OpenCode Free models (zero cost). The profile auto-picks the best
+available free model per agent role using a candidate chain.
+Fallback order: nemotron-3-ultra-free → big-pickle → mimo-v2.5-free →
+deepseek-v4-flash-free → north-mini-code-free → hy3-free.
 
 ### Model-routing table (go)
 
-Each of the 7 agents is assigned a model optimized for its role:
+Each of the 8 agents is assigned a model optimized for its role:
 
 | Agent | Role | Go Model | Rationale |
 |---|---|---|---|
-| `orchestrator` | Triage, routing, state, gate | `opencode-go/glm-5.1` | Strong instruction following, long-context planning |
-| `planner` | Requirements + CleanArch plan | `opencode-go/glm-5.1` | Deep reasoning, architecture + dependency resolution |
-| `developer` | Implementation + root-cause fixes | `opencode-go/kimi-k2.6` | Top-tier code generation across all languages |
+| `orchestrator` | Triage, routing, state, gate | `opencode-go/glm-5.2` | Strong instruction following, long-context planning |
+| `planner` | Requirements + CleanArch plan | `opencode-go/glm-5.2` | Deep reasoning, architecture + dependency resolution |
+| `developer` | Implementation + root-cause fixes | `opencode-go/kimi-k2.7-code` | Top-tier code generation across all languages |
 | `qa` | Tests, lint, code review, regression | `opencode-go/deepseek-v4-pro` | Precise analytical verification |
 | `verifier` | Runtime app checks (all scopes) | `opencode-go/deepseek-v4-pro` | Reliable, deterministic inspection |
 | `security` | CRUD/exposure forensic review | `opencode-go/deepseek-v4-pro` | Methodical threat reasoning |
-| `documenter` | Docs + state update | `opencode-go/glm-5.1` | Documentation quality, readability |
+| `documenter` | Docs + state update | `opencode-go/qwen3.7-plus` | Documentation quality, readability |
 
 ### Prefix requirement
 
@@ -399,14 +390,16 @@ delivers the highest-quality results from the OpenCode platform.
 Each agent in the pipeline has different cognitive demands:
 
 - **Planning agents** (Orchestrator, Analyst, Architect) need long-context
-  reasoning and stable instruction following -- `opencode-go/glm-5.1` excels here.
+  reasoning and stable instruction following -- `opencode-go/glm-5.2` excels here.
 - **Code agents** (Developer, Explorer, Repair) need top-tier generation quality
-  across languages and frameworks -- `opencode-go/kimi-k2.6` is the best choice.
+  across languages and frameworks -- `opencode-go/kimi-k2.7-code` is the best choice.
 - **Verification agents** (QA, Route Verifier, Form Verifier, API Verifier, Security, RCA,
   Regression) need precision and determinism -- `opencode-go/deepseek-v4-pro`
   delivers consistent, accurate results.
 - **Recovery agent** runs frequently and needs to be fast/cheap --
   `opencode-go/deepseek-v4-flash` provides the best cost-speed balance.
+- **Vision agent** needs multimodal understanding -- `opencode-go/minimax-m3`
+  provides the best image analysis capabilities.
 
 ### Token efficiency
 

@@ -1,7 +1,7 @@
 ---
 description: "DevLoom Security: callable by the orchestrator for CRUD endpoint and exposure-surface review"
 mode: subagent
-model: opencode-go/deepseek-v4-flash
+model: opencode-go/deepseek-v4-pro
 hidden: true
 permission:
   edit: allow

@@ -11,19 +11,19 @@ const SOURCE_AGENTS_DIR = resolve(dirname(new URL(import.meta.url).pathname), ".
 
 export const PROFILES = {
   go: {
-    orchestrator: "opencode-go/glm-5.1",
-    planner: "opencode-go/glm-5.1",
-    developer: "opencode-go/kimi-k2.6",
+    orchestrator: "opencode-go/glm-5.2",
+    planner: "opencode-go/glm-5.2",
+    developer: "opencode-go/kimi-k2.7-code",
     qa: "opencode-go/deepseek-v4-pro",
     verifier: "opencode-go/deepseek-v4-pro",
     security: "opencode-go/deepseek-v4-pro",
-    documenter: "opencode-go/glm-5.1",
+    documenter: "opencode-go/qwen3.7-plus",
     vision: "opencode-go/minimax-m3"
   },
   "go-economy": {
     orchestrator: "opencode-go/deepseek-v4-pro",
-    planner: "opencode-go/kimi-k2.6",
-    developer: "opencode-go/kimi-k2.6",
+    planner: "opencode-go/kimi-k2.7-code",
+    developer: "opencode-go/kimi-k2.7-code",
     qa: "opencode-go/deepseek-v4-pro",
     verifier: "opencode-go/deepseek-v4-pro",
     security: "opencode-go/deepseek-v4-pro",
@@ -53,12 +53,11 @@ export const PROFILES = {
 }
 
 export const FREE_CANDIDATES_BY_ROLE = {
-  planning: ["opencode/nemotron-3-ultra-free", "opencode/big-pickle", "opencode/mimo-v2.5-free", "opencode/deepseek-v4-flash-free"],
-  implementation: ["opencode/mimo-v2.5-free", "opencode/deepseek-v4-flash-free", "opencode/nemotron-3-ultra-free", "opencode/big-pickle"],
-  verification: ["opencode/deepseek-v4-flash-free", "opencode/mimo-v2.5-free", "opencode/nemotron-3-ultra-free", "opencode/big-pickle"],
-  documentation: ["opencode/nemotron-3-ultra-free", "opencode/mimo-v2.5-free", "opencode/big-pickle", "opencode/deepseek-v4-flash-free"],
-  // ponytail: no free opencode/ models support vision; use opencode-go multimodal fallbacks
-  vision: ["opencode-go/minimax-m3", "opencode-go/glm-5.2", "opencode-go/kimi-k2.6"]
+  planning: ["opencode/nemotron-3-ultra-free", "opencode/big-pickle", "opencode/mimo-v2.5-free", "opencode/deepseek-v4-flash-free", "opencode/hy3-free", "opencode/north-mini-code-free"],
+  implementation: ["opencode/mimo-v2.5-free", "opencode/deepseek-v4-flash-free", "opencode/nemotron-3-ultra-free", "opencode/big-pickle", "opencode/north-mini-code-free", "opencode/hy3-free"],
+  verification: ["opencode/deepseek-v4-flash-free", "opencode/mimo-v2.5-free", "opencode/nemotron-3-ultra-free", "opencode/big-pickle", "opencode/north-mini-code-free", "opencode/hy3-free"],
+  documentation: ["opencode/nemotron-3-ultra-free", "opencode/mimo-v2.5-free", "opencode/big-pickle", "opencode/deepseek-v4-flash-free", "opencode/hy3-free", "opencode/north-mini-code-free"],
+  vision: ["opencode-go/minimax-m3", "opencode-go/glm-5.2", "opencode-go/kimi-k2.7-code"]
 }
 
 export const FREE_ROLE_MAP = {

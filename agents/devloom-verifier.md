@@ -1,7 +1,7 @@
 ---
 description: "DevLoom Verifier: callable by the orchestrator for runtime app verification across scopes"
 mode: subagent
-model: opencode-go/deepseek-v4-flash
+model: opencode-go/deepseek-v4-pro
 hidden: true
 permission:
   edit: allow

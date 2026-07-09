@@ -6,16 +6,21 @@ const AGENTS_DIR = `${HOME}/.config/opencode/agents`
 const CONFIG_PATH = ".opencode/devloom/config.json"
 
 const ALL_GO_MODELS = [
-  "opencode-go/glm-5.1",
-  "opencode-go/kimi-k2.6",
+  "opencode-go/glm-5.2",
+  "opencode-go/kimi-k2.7-code",
   "opencode-go/deepseek-v4-pro",
   "opencode-go/deepseek-v4-flash",
   "opencode-go/qwen3.6-plus",
+  "opencode-go/qwen3.7-plus",
+  "opencode-go/mimo-v2.5",
+  "opencode-go/mimo-v2.5-pro",
   "opencode-go/minimax-m3",
 ]
 
 const ALL_FREE_MODELS = [
   "opencode/nemotron-3-ultra-free",
+  "opencode/north-mini-code-free",
+  "opencode/hy3-free",
   "opencode/mimo-v2.5-free",
   "opencode/deepseek-v4-flash-free",
   "opencode/big-pickle",
@@ -91,8 +96,8 @@ describe("profile.mjs", () => {
   test("cmdSet('go') assigns correct go models without fallback", async () => {
     const profile = await importProfile()
     const config = profile.cmdSet("go")
-    expect(config.models.orchestrator).toBe("opencode-go/glm-5.1")
-    expect(config.models.developer).toBe("opencode-go/kimi-k2.6")
+    expect(config.models.orchestrator).toBe("opencode-go/glm-5.2")
+    expect(config.models.developer).toBe("opencode-go/kimi-k2.7-code")
     expect(config.models.qa).toBe("opencode-go/deepseek-v4-pro")
     expect(Object.keys(config.fallbacks || {})).toHaveLength(0)
   })
@@ -157,20 +162,20 @@ describe("profile.mjs", () => {
     const agentPath = `${AGENTS_DIR}/devloom-orchestrator.md`
     writtenFiles[agentPath] = "model: old-model\n# Orchestrator\n"
     const profile = await importProfile()
-    profile.applyModelsToAgentFiles({ orchestrator: "opencode-go/glm-5.1" })
+    profile.applyModelsToAgentFiles({ orchestrator: "opencode-go/glm-5.2" })
     const content = writtenFiles[agentPath]
-    expect(content).toContain("model: opencode-go/glm-5.1")
+    expect(content).toContain("model: opencode-go/glm-5.2")
     expect(content).toContain("# Orchestrator")
     expect(content).not.toContain("model: old-model")
   })
 
   test("cmdSet('go') falls back developer when go model is missing", async () => {
-    mockAvailable = ALL_MODELS.filter((m) => m !== "opencode-go/kimi-k2.6")
+    mockAvailable = ALL_MODELS.filter((m) => m !== "opencode-go/kimi-k2.7-code")
     const profile = await importProfile()
     const config = profile.cmdSet("go")
     expect(config.models.developer).toMatch(/^(opencode\/.*-free|opencode\/big-pickle)$/)
     expect(config.fallbacks).toHaveProperty("developer")
-    expect(config.fallbacks.developer.from).toBe("opencode-go/kimi-k2.6")
+    expect(config.fallbacks.developer.from).toBe("opencode-go/kimi-k2.7-code")
     expect(config.fallbacks.developer.to).toBe(config.models.developer)
   })
 

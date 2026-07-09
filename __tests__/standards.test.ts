@@ -31,8 +31,8 @@ describe("DevLoom operating standard", () => {
     expect(routing).toContain("go")
     expect(routing).toContain("go-economy")
     expect(routing).toContain("free")
-    expect(routing).toContain("GLM 5.1")
-    expect(routing).toContain("Kimi K2.6")
+    expect(routing).toContain("GLM 5.2")
+    expect(routing).toContain("Kimi K2.7 Code")
     expect(routing).toContain("DeepSeek V4 Pro")
   })
 
@@ -139,7 +139,7 @@ describe("Profile definitions", () => {
   test("config profile is go with glm orchestrator", () => {
     const config = JSON.parse(read(".opencode/devloom/config.json"))
     expect(config.profile).toBe("go")
-    expect(config.models.orchestrator).toBe("opencode-go/glm-5.1")
+    expect(config.models.orchestrator).toBe("opencode-go/glm-5.2")
   })
 
   test("config models cover exactly the 8 agent roles", () => {

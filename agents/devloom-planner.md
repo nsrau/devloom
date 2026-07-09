@@ -1,7 +1,7 @@
 ---
 description: "DevLoom Planner: callable by the orchestrator for requirements and architecture planning"
 mode: subagent
-model: opencode-go/deepseek-v4-flash
+model: opencode-go/glm-5.2
 hidden: true
 permission:
   edit: allow
