@@ -26,16 +26,16 @@ Example config.json entry:
 
 ### go (max quality)
 
-The highest quality profile. Assigns GLM 5.2 to planning and architecture (best reasoning), Kimi K2.7 Code to implementation (best code generation), DeepSeek V4 Pro to verification roles, and Qwen 3.7 Plus to documentation. Recommended for production work, complex features, and any task where quality is the primary concern.
+The highest quality profile for production work. Assigns DeepSeek V4 Pro to orchestrator/planner for fast, structured dispatch, Kimi K2.7 Code to implementation, GLM 5.2 to security for deep threat analysis, DeepSeek V4 Pro to other verification roles, and Qwen 3.7 Plus to documentation.
 
 | Role | Model |
 |---|---|
-| orchestrator | opencode-go/glm-5.2 |
-| planner | opencode-go/glm-5.2 |
+| orchestrator | opencode-go/deepseek-v4-pro |
+| planner | opencode-go/deepseek-v4-pro |
 | developer | opencode-go/kimi-k2.7-code |
 | qa | opencode-go/deepseek-v4-pro |
 | verifier | opencode-go/deepseek-v4-pro |
-| security | opencode-go/deepseek-v4-pro |
+| security | opencode-go/glm-5.2 |
 | documenter | opencode-go/qwen3.7-plus |
 
 ### go-economy
@@ -100,8 +100,10 @@ Kimi K2.7 Code is the primary workhorse for the developer role in the go and go-
 
 ### When to Use DeepSeek V4 Pro
 
-DeepSeek V4 Pro (opencode-go/deepseek-v4-pro) excels at structured, analytical tasks with clear right/wrong answers:
+DeepSeek V4 Pro (opencode-go/deepseek-v4-pro) excels at structured, analytical tasks with clear right/wrong answers. It is the default orchestrator and planner in the go profile because orchestration logic (dispatching, routing, structured decisions) benefits from speed and precision over open-ended reasoning.
 
+Best uses:
+- Orchestration and task dispatch
 - Verification and validation (routes, forms, APIs, accessibility)
 - Writing and running tests
 - Debugging and root cause analysis
@@ -125,7 +127,7 @@ Free models (opencode/nemotron-3-ultra-free, opencode/big-pickle, opencode/mimo-
 
 Frontend development involves numerous design decisions: component decomposition, state management, accessibility, responsive layout, user flow, and framework-specific patterns. These decisions benefit from strong reasoning rather than large context.
 
-**Recommendation:** Use GLM 5.2 for planning, architecture, and review of frontend work. Use Kimi K2.7 Code for implementation when the task spans many files (common in Angular/React features).
+**Recommendation:** Use DeepSeek V4 Pro for planning, architecture, and review of frontend work. Use Kimi K2.7 Code for implementation when the task spans many files (common in Angular/React features).
 
 ### Backend and Data-Intensive Work
 

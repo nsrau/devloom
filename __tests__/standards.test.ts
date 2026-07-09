@@ -136,10 +136,10 @@ describe("Agent file standards", () => {
 })
 
 describe("Profile definitions", () => {
-  test("config profile is go with glm orchestrator", () => {
+  test("config profile is go with deepseek-v4-pro orchestrator", () => {
     const config = JSON.parse(read(".opencode/devloom/config.json"))
     expect(config.profile).toBe("go")
-    expect(config.models.orchestrator).toBe("opencode-go/glm-5.2")
+    expect(config.models.orchestrator).toBe("opencode-go/deepseek-v4-pro")
   })
 
   test("config models cover exactly the 8 agent roles", () => {

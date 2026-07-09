@@ -1,6 +1,6 @@
 ---
 description: "DevLoom Orchestrator: autonomous multi-agent delivery"
-model: opencode-go/glm-5.2
+model: opencode-go/deepseek-v4-pro
 max_steps: 500
 permission:
   task: allow

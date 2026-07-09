@@ -11,12 +11,12 @@ const SOURCE_AGENTS_DIR = resolve(dirname(new URL(import.meta.url).pathname), ".
 
 export const PROFILES = {
   go: {
-    orchestrator: "opencode-go/glm-5.2",
-    planner: "opencode-go/glm-5.2",
+    orchestrator: "opencode-go/deepseek-v4-pro",
+    planner: "opencode-go/deepseek-v4-pro",
     developer: "opencode-go/kimi-k2.7-code",
     qa: "opencode-go/deepseek-v4-pro",
     verifier: "opencode-go/deepseek-v4-pro",
-    security: "opencode-go/deepseek-v4-pro",
+    security: "opencode-go/glm-5.2",
     documenter: "opencode-go/qwen3.7-plus",
     vision: "opencode-go/minimax-m3"
   },
