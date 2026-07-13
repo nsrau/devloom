@@ -21,7 +21,7 @@ export const PROFILES = {
     vision: "opencode-go/glm-5.2"
   },
   "go-economy": {
-    orchestrator: "opencode-go/deepseek-v4-pro",
+    orchestrator: "opencode-go/minimax-m3",
     planner: "opencode-go/kimi-k2.7-code",
     developer: "opencode-go/kimi-k2.7-code",
     qa: "opencode-go/deepseek-v4-pro",

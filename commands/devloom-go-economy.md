@@ -1,7 +1,7 @@
 ---
 description: "DevLoom Go Economy: switch to cheaper OpenCode Go models"
 agent: devloom-orchestrator
-model: opencode-go/deepseek-v4-pro
+model: opencode-go/minimax-m3
 subtask: false
 ---
 

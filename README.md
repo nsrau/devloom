@@ -328,7 +328,7 @@ Uses faster, lower-cost Go models while maintaining strong results:
 ```json
 {
   "models": {
-    "orchestrator": "opencode-go/deepseek-v4-pro",
+    "orchestrator": "opencode-go/minimax-m3",
     "planner": "opencode-go/kimi-k2.7-code",
     "developer": "opencode-go/kimi-k2.7-code",
     "qa": "opencode-go/deepseek-v4-pro",
