@@ -309,14 +309,14 @@ Create `.opencode/devloom/config.json`:
 ```json
 {
   "models": {
-    "orchestrator": "opencode-go/deepseek-v4-pro",
+    "orchestrator": "opencode-go/minimax-m3",
     "planner": "opencode-go/deepseek-v4-pro",
     "developer": "opencode-go/kimi-k2.7-code",
     "qa": "opencode-go/deepseek-v4-pro",
     "verifier": "opencode-go/deepseek-v4-pro",
     "security": "opencode-go/glm-5.2",
     "documenter": "opencode-go/qwen3.7-plus",
-    "vision": "opencode-go/minimax-m3"
+    "vision": "opencode-go/glm-5.2"
   }
 }
 ```
@@ -353,13 +353,14 @@ Each of the 8 agents is assigned a model optimized for its role:
 
 | Agent | Role | Go Model | Rationale |
 |---|---|---|---|
-| `orchestrator` | Triage, routing, state, gate | `opencode-go/deepseek-v4-pro` | Fast structured dispatch, reliable orchestration |
+| `orchestrator` | Triage, routing, state, gate, vision-detect | `opencode-go/minimax-m3` | Multimodal — detects images, fast dispatch |
 | `planner` | Requirements + CleanArch plan | `opencode-go/deepseek-v4-pro` | Analytical planning, architectural decomposition |
 | `developer` | Implementation + root-cause fixes | `opencode-go/kimi-k2.7-code` | Top-tier code generation across all languages |
 | `qa` | Tests, lint, code review, regression | `opencode-go/deepseek-v4-pro` | Precise analytical verification |
 | `verifier` | Runtime app checks (all scopes) | `opencode-go/deepseek-v4-pro` | Reliable, deterministic inspection |
 | `security` | CRUD/exposure forensic review | `opencode-go/glm-5.2` | Deep threat analysis, multi-step reasoning |
 | `documenter` | Docs + state update | `opencode-go/qwen3.7-plus` | Documentation quality, readability |
+| `vision` | Image analysis | `opencode-go/glm-5.2` | Strong multimodal reasoning, structured output |
 
 ### Prefix requirement
 
@@ -389,8 +390,10 @@ delivers the highest-quality results from the OpenCode platform.
 
 Each agent in the pipeline has different cognitive demands:
 
-- **Planning agents** (Orchestrator, Analyst, Architect) need fast structured dispatch
-  and reliable analytical planning -- `opencode-go/deepseek-v4-pro` excels here.
+- **Orchestrator** needs multimodal input handling (to detect images) plus
+  fast structured dispatch -- `opencode-go/minimax-m3` is multimodal and fast.
+- **Planning agents** (Planner, Analyst, Architect) need reliable analytical
+  planning -- `opencode-go/deepseek-v4-pro` excels here.
 - **Code agents** (Developer, Explorer, Repair) need top-tier generation quality
   across languages and frameworks -- `opencode-go/kimi-k2.7-code` is the best choice.
 - **Verification agents** (QA, Route Verifier, Form Verifier, API Verifier, Security, RCA,
@@ -398,7 +401,7 @@ Each agent in the pipeline has different cognitive demands:
   delivers consistent, accurate results.
 - **Recovery agent** runs frequently and needs to be fast/cheap --
   `opencode-go/deepseek-v4-flash` provides the best cost-speed balance.
-- **Vision agent** needs multimodal understanding -- `opencode-go/minimax-m3`
+- **Vision agent** needs multimodal understanding -- `opencode-go/glm-5.2`
   provides the best image analysis capabilities.
 
 ### Token efficiency

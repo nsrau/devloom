@@ -26,17 +26,18 @@ Example config.json entry:
 
 ### go (max quality)
 
-The highest quality profile for production work. Assigns DeepSeek V4 Pro to orchestrator/planner for fast, structured dispatch, Kimi K2.7 Code to implementation, GLM 5.2 to security for deep threat analysis, DeepSeek V4 Pro to other verification roles, and Qwen 3.7 Plus to documentation.
+The highest quality profile for production work. Assigns MiniMax M3 to orchestrator (multimodal — can detect image attachments and delegate to vision), DeepSeek V4 Pro to planner, Kimi K2.7 Code to implementation, GLM 5.2 to security and vision analysis, DeepSeek V4 Pro to other verification roles, and Qwen 3.7 Plus to documentation.
 
 | Role | Model |
 |---|---|
-| orchestrator | opencode-go/deepseek-v4-pro |
+| orchestrator | opencode-go/minimax-m3 |
 | planner | opencode-go/deepseek-v4-pro |
 | developer | opencode-go/kimi-k2.7-code |
 | qa | opencode-go/deepseek-v4-pro |
 | verifier | opencode-go/deepseek-v4-pro |
 | security | opencode-go/glm-5.2 |
 | documenter | opencode-go/qwen3.7-plus |
+| vision | opencode-go/glm-5.2 |
 
 ### go-economy
 
@@ -86,6 +87,16 @@ Kimi K2.7 Code (opencode-go/kimi-k2.7-code) offers the best code generation qual
 
 Kimi K2.7 Code is the primary workhorse for the developer role in the go and go-economy profiles.
 
+### When to Use MiniMax M3 (Multimodal)
+
+MiniMax M3 (opencode-go/minimax-m3) is the multimodal orchestrator. It is the default orchestrator in the go profile because it can:
+
+- Detect image attachments in user prompts and delegate to `devloom-vision` automatically
+- Process multimodal input directly when vision is needed inline
+- Dispatch tasks quickly with structured, predictable routing
+
+Use MiniMax M3 for the orchestrator role, or any role that needs to receive image/screenshot input. Vision analysis (interpreting image content) is delegated to GLM 5.2 via the `devloom-vision` sub-agent for stronger reasoning.
+
 ### When to Use DeepSeek V4 Pro
 
 DeepSeek V4 Pro (opencode-go/deepseek-v4-pro) excels at structured, analytical tasks with clear right/wrong answers. It is the best choice for:
@@ -100,10 +111,10 @@ Kimi K2.7 Code is the primary workhorse for the developer role in the go and go-
 
 ### When to Use DeepSeek V4 Pro
 
-DeepSeek V4 Pro (opencode-go/deepseek-v4-pro) excels at structured, analytical tasks with clear right/wrong answers. It is the default orchestrator and planner in the go profile because orchestration logic (dispatching, routing, structured decisions) benefits from speed and precision over open-ended reasoning.
+DeepSeek V4 Pro (opencode-go/deepseek-v4-pro) excels at structured, analytical tasks with clear right/wrong answers. It is the default planner, qa, and verifier in the go profile because these roles benefit from precision over open-ended reasoning.
 
 Best uses:
-- Orchestration and task dispatch
+- Planning and architectural decomposition
 - Verification and validation (routes, forms, APIs, accessibility)
 - Writing and running tests
 - Debugging and root cause analysis
