@@ -136,10 +136,10 @@ describe("Agent file standards", () => {
 })
 
 describe("Profile definitions", () => {
-  test("config profile is go with minimax-m3 orchestrator", () => {
+  test("config profile is go with deepseek-v4-flash orchestrator", () => {
     const config = JSON.parse(read(".opencode/devloom/config.json"))
     expect(config.profile).toBe("go")
-    expect(config.models.orchestrator).toBe("opencode-go/minimax-m3")
+    expect(config.models.orchestrator).toBe("opencode-go/deepseek-v4-flash")
   })
 
   test("config models cover exactly the 8 agent roles", () => {
@@ -220,7 +220,7 @@ describe("Profile command files", () => {
 
   test("devloom-go uses premium model in frontmatter", () => {
     const content = read("commands/devloom-go.md")
-    expect(content).toContain("opencode-go/minimax-m3")
+    expect(content).toContain("opencode-go/deepseek-v4-flash")
   })
 
   test("devloom-free uses free model in frontmatter", () => {

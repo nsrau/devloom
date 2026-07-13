@@ -309,7 +309,7 @@ Create `.opencode/devloom/config.json`:
 ```json
 {
   "models": {
-    "orchestrator": "opencode-go/minimax-m3",
+    "orchestrator": "opencode-go/deepseek-v4-flash",
     "planner": "opencode-go/deepseek-v4-pro",
     "developer": "opencode-go/kimi-k2.7-code",
     "qa": "opencode-go/deepseek-v4-pro",
@@ -328,7 +328,7 @@ Uses faster, lower-cost Go models while maintaining strong results:
 ```json
 {
   "models": {
-    "orchestrator": "opencode-go/minimax-m3",
+    "orchestrator": "opencode-go/deepseek-v4-flash",
     "planner": "opencode-go/kimi-k2.7-code",
     "developer": "opencode-go/kimi-k2.7-code",
     "qa": "opencode-go/deepseek-v4-pro",
@@ -353,7 +353,7 @@ Each of the 8 agents is assigned a model optimized for its role:
 
 | Agent | Role | Go Model | Rationale |
 |---|---|---|---|
-| `orchestrator` | Triage, routing, state, gate, vision-detect | `opencode-go/minimax-m3` | Multimodal — detects images, fast dispatch |
+| `orchestrator` | Triage, routing, state, gate, vision-detect | `opencode-go/deepseek-v4-flash` | Cheapest orchestrator; vision delegated to `devloom-vision` |
 | `planner` | Requirements + CleanArch plan | `opencode-go/deepseek-v4-pro` | Analytical planning, architectural decomposition |
 | `developer` | Implementation + root-cause fixes | `opencode-go/kimi-k2.7-code` | Top-tier code generation across all languages |
 | `qa` | Tests, lint, code review, regression | `opencode-go/deepseek-v4-pro` | Precise analytical verification |
@@ -390,8 +390,10 @@ delivers the highest-quality results from the OpenCode platform.
 
 Each agent in the pipeline has different cognitive demands:
 
-- **Orchestrator** needs multimodal input handling (to detect images) plus
-  fast structured dispatch -- `opencode-go/minimax-m3` is multimodal and fast.
+- **Orchestrator** runs every turn and consumes the most tokens by volume.
+  Vision analysis is delegated to `devloom-vision` (GLM 5.2), so the
+  orchestrator itself can use a cheap, fast text model --
+  `opencode-go/deepseek-v4-flash` minimizes spend.
 - **Planning agents** (Planner, Analyst, Architect) need reliable analytical
   planning -- `opencode-go/deepseek-v4-pro` excels here.
 - **Code agents** (Developer, Explorer, Repair) need top-tier generation quality

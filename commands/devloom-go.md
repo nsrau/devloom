@@ -1,7 +1,7 @@
 ---
 description: "DevLoom Go: switch to OpenCode Go premium models"
 agent: devloom-orchestrator
-model: opencode-go/minimax-m3
+model: opencode-go/deepseek-v4-flash
 subtask: false
 ---
 

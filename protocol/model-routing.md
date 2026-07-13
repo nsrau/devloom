@@ -26,11 +26,11 @@ Example config.json entry:
 
 ### go (max quality)
 
-The highest quality profile for production work. Assigns MiniMax M3 to orchestrator (multimodal — can detect image attachments and delegate to vision), DeepSeek V4 Pro to planner, Kimi K2.7 Code to implementation, GLM 5.2 to security and vision analysis, DeepSeek V4 Pro to other verification roles, and Qwen 3.7 Plus to documentation.
+The highest quality profile for production work. Orchestrator uses DeepSeek V4 Flash (cheapest — runs every turn; vision delegated to `devloom-vision`). DeepSeek V4 Pro to planner, Kimi K2.7 Code to implementation, GLM 5.2 to security and vision analysis, DeepSeek V4 Pro to other verification roles, and Qwen 3.7 Plus to documentation.
 
 | Role | Model |
 |---|---|
-| orchestrator | opencode-go/minimax-m3 |
+| orchestrator | opencode-go/deepseek-v4-flash |
 | planner | opencode-go/deepseek-v4-pro |
 | developer | opencode-go/kimi-k2.7-code |
 | qa | opencode-go/deepseek-v4-pro |
@@ -89,13 +89,7 @@ Kimi K2.7 Code is the primary workhorse for the developer role in the go and go-
 
 ### When to Use MiniMax M3 (Multimodal)
 
-MiniMax M3 (opencode-go/minimax-m3) is the multimodal orchestrator. It is the default orchestrator in the go profile because it can:
-
-- Detect image attachments in user prompts and delegate to `devloom-vision` automatically
-- Process multimodal input directly when vision is needed inline
-- Dispatch tasks quickly with structured, predictable routing
-
-Use MiniMax M3 for the orchestrator role, or any role that needs to receive image/screenshot input. Vision analysis (interpreting image content) is delegated to GLM 5.2 via the `devloom-vision` sub-agent for stronger reasoning.
+MiniMax M3 (opencode-go/minimax-m3) is multimodal but no longer the default orchestrator. It is the fallback for the `vision` role when GLM 5.2 is unavailable, and the secondary candidate in the `go-flash` and free profiles. Use it directly only when you need a multimodal model with no vision delegation overhead.
 
 ### When to Use DeepSeek V4 Pro
 
@@ -122,7 +116,7 @@ Best uses:
 
 ### When to Use DeepSeek V4 Flash
 
-DeepSeek V4 Flash (opencode-go/deepseek-v4-flash) is a lower-cost, faster model used for well-scoped, deterministic work where premium reasoning is unnecessary.
+DeepSeek V4 Flash (opencode-go/deepseek-v4-flash) is the cheapest Go model. It is the default orchestrator in the go and go-economy profiles because the orchestrator runs every turn and accumulates the highest token volume. Vision analysis is delegated to `devloom-vision` (GLM 5.2), so the orchestrator does not need multimodal capability. It is also the default for every role in the `go-flash` profile.
 
 ### When to Use Qwen Models
 
@@ -138,7 +132,7 @@ Free models (opencode/nemotron-3-ultra-free, opencode/big-pickle, opencode/mimo-
 
 Frontend development involves numerous design decisions: component decomposition, state management, accessibility, responsive layout, user flow, and framework-specific patterns. These decisions benefit from strong reasoning rather than large context.
 
-**Recommendation:** Use DeepSeek V4 Pro for planning, architecture, and review of frontend work. Use Kimi K2.7 Code for implementation when the task spans many files (common in Angular/React features).
+**Recommendation:** Use DeepSeek V4 Pro (planner) for planning, architecture, and review of frontend work. Use Kimi K2.7 Code for implementation when the task spans many files (common in Angular/React features).
 
 ### Backend and Data-Intensive Work
 

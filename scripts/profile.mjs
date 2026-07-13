@@ -11,7 +11,7 @@ const SOURCE_AGENTS_DIR = resolve(dirname(new URL(import.meta.url).pathname), ".
 
 export const PROFILES = {
   go: {
-    orchestrator: "opencode-go/minimax-m3",
+    orchestrator: "opencode-go/deepseek-v4-flash",
     planner: "opencode-go/deepseek-v4-pro",
     developer: "opencode-go/kimi-k2.7-code",
     qa: "opencode-go/deepseek-v4-pro",
@@ -21,7 +21,7 @@ export const PROFILES = {
     vision: "opencode-go/glm-5.2"
   },
   "go-economy": {
-    orchestrator: "opencode-go/minimax-m3",
+    orchestrator: "opencode-go/deepseek-v4-flash",
     planner: "opencode-go/kimi-k2.7-code",
     developer: "opencode-go/kimi-k2.7-code",
     qa: "opencode-go/deepseek-v4-pro",
