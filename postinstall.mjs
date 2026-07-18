@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { copyFileSync, mkdirSync, existsSync, readdirSync, statSync, accessSync, constants } from "fs"
+import { copyFileSync, mkdirSync, existsSync, readdirSync, statSync, accessSync, constants, readFileSync, writeFileSync } from "fs"
 import { resolve, dirname, join, relative } from "path"
 import { fileURLToPath } from "url"
 import { homedir, platform } from "os"
