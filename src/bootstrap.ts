@@ -147,9 +147,11 @@ function normalizeState(value: unknown, board: ProjectBoard, now: string): Proje
 
 export function ensureProjectWorkspace(rootDir: string) {
   const projectRoot = join(rootDir, ".opencode", "devloom", "project")
+  const devloomRoot = join(rootDir, ".opencode", "devloom")
   const now = new Date().toISOString()
 
   ensureDir(projectRoot)
+  ensureDir(join(devloomRoot, ".tmp"))
   for (const dir of PROJECT_DIRS) ensureDir(join(projectRoot, dir))
 
   const configPath = join(projectRoot, "config.json")
