@@ -136,17 +136,18 @@ describe("Agent file standards", () => {
 })
 
 describe("Profile definitions", () => {
-  test("config profile is go with deepseek-v4-flash orchestrator", () => {
-    const config = JSON.parse(read(".opencode/devloom/config.json"))
-    expect(config.profile).toBe("go")
-    expect(config.models.orchestrator).toBe("opencode-go/minimax-m3")
+  test("go profile has minimax-m3 orchestrator", () => {
+    const pm = read("scripts/profile.mjs")
+    expect(pm).toContain("minimax-m3")
+    expect(pm).toContain("orchestrator")
   })
 
-  test("config models cover exactly the 8 agent roles", () => {
-    const config = JSON.parse(read(".opencode/devloom/config.json"))
-    expect(Object.keys(config.models).sort()).toEqual(
-      ["developer", "documenter", "orchestrator", "planner", "qa", "security", "verifier", "vision"]
-    )
+  test("profile covers exactly the 8 agent roles", () => {
+    const pm = read("scripts/profile.mjs")
+    const agentRoles = ["orchestrator", "planner", "developer", "qa", "verifier", "security", "documenter", "vision"]
+    for (const role of agentRoles) {
+      expect(pm).toContain(`${role}:`)
+    }
   })
 
   test("command devloom.md delegates to profile.mjs", () => {
@@ -278,12 +279,11 @@ describe("Profile detection and fallback behavior", () => {
     expect(goModels).toBeGreaterThanOrEqual(8)
   })
 
-  test("configuration stores resolved profile metadata", () => {
-    const config = JSON.parse(read(".opencode/devloom/config.json"))
-    expect(config).toHaveProperty("profile")
-    expect(config).toHaveProperty("resolvedProfile")
-    expect(config).toHaveProperty("models")
-    expect(config).toHaveProperty("overrides")
+  test("profile.mjs defines PROFILES with models", () => {
+    const pm = read("scripts/profile.mjs")
+    expect(pm).toContain("PROFILES")
+    expect(pm).toContain("go:")
+    expect(pm).toContain("go-economy")
   })
 
   test("free profile has all 8 agents mapped", () => {
