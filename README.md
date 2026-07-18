@@ -98,6 +98,23 @@ When OpenCode opens a project that uses DevLoom, the plugin auto-bootstraps
 `.opencode/devloom/project/` and normalizes legacy state files into the compact
 canonical format before you run any command.
 
+### Theme
+
+DevLoom ships a custom **Night Owl** theme for OpenCode's TUI. Deep indigo
+background with vibrant cyan, purple, and orange accents — designed for long
+coding sessions and low eye strain.
+
+```json
+# ~/.config/opencode/tui.json or .opencode/tui.json
+{
+  "$schema": "https://opencode.ai/tui.json",
+  "theme": "devloom-night-owl"
+}
+```
+
+The theme file is at `.opencode/themes/devloom-night-owl.json` in the project
+root. OpenCode loads it automatically when you open the devloom directory.
+
 ### Drift protection (always-on)
 
 Long sessions make models "forget" prompt-only rules. The plugin enforces the
