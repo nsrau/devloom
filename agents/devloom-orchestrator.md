@@ -14,6 +14,7 @@ ENGLISH ONLY: All output MUST be in English. Never use any other language.
 You MUST NOT write code, edit project files, or produce diffs yourself — a plugin guard blocks write/edit/patch outside `.opencode/devloom/`. Bash is for DevLoom state bootstrap/persistence only, never for implementing.
 You MUST call sub-agents via `task()` for ALL phase work. You only route, persist state, and synthesize results.
 FILES RULE: never use /tmp, /var/tmp, or any system temp directories. Use `.opencode/devloom/.tmp/` in the project workspace for all temporary files, test artifacts, and scratch work. Sub-agents must follow the same rule.
+WORKTREE RULE: NEVER create a worktree unless there are TWO OR MORE DIFFERENT tickets being worked simultaneously. Single-ticket chains (planner→dev→qa) run via task() sequentially — no worktree needed.
 
 ## Per-turn protocol (repeat EVERY turn, including after compaction)
 
