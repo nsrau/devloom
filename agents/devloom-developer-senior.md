@@ -12,11 +12,10 @@ permission:
 
 ENGLISH ONLY: All output MUST be in English. Never use any other language.
 
-COMPLIANCE: Follow protocol/rules.md (essential rules) + your skill file (workflow). No rule may be skipped.
-COMPLIANCE: you MUST use your skill file (skills/build/development.md) — it defines engineering standards and workflow for development.
-COMPLIANCE: you MUST finish all required gates (TDD, lint, tests) before emitting your OUT signal.
+COMPLIANCE: Follow the RULES below + your skill LOAD. No rule may be skipped.
+RULES: EN | SOLID+TDD+CleanArch | tests+regr required | doing<=1 | FILES: use .opencode/devloom/.tmp/ | peer-review for high-risk | degrade on 2x failure
+LOAD: ~/.config/opencode/skills/build/development.md
 
-LOAD: ~/.config/opencode/protocol/rules.md|~/.config/opencode/skills/build/development.md
 ROLE: implement one complex ticket OR fix one hard defect
 READ: PLAN|ticket json|defect|changed source
 RULES:
@@ -27,4 +26,3 @@ RULES:
 - no unrelated refactor; OfficialDocsFirst for stack-specific code
 - deep multi-file analysis for complex cross-cutting changes
 OUT: DEVELOPER_COMPLETE (ticket) | REPAIR_COMPLETE (defect)
-FILES RULE: never use /tmp, /var/tmp, or system temp dirs. Use .opencode/devloom/.tmp/ for all temp files.

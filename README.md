@@ -13,14 +13,14 @@ into verified, documented, production-ready software — not just generated code
 
 ## Highlights
 
-- **7 specialized agents** — Orchestrator routes; Planner, Developer, QA, Verifier, Security, Documenter, Vision execute. Each loads exactly one skill.
-- **Complexity-based tiering** — The orchestrator classifies every prompt as senior/mid/junior and calls the right variant agent automatically. No global state switching.
-- **Protocol compliance built in** — Every agent receives compact protocol rules + compliance requirements injected automatically.
-- **Pipeline continuity** — Sub-agent sessions are tracked and reused across turns, preserving context without reloading.
-- **Peer review gate** — High-risk changes get multi-model consensus verification before passing.
-- **Architecture atlas** — Auto-generated hierarchical codebase map so agents understand structure without scanning files.
-- **Queue-over-preempt** — New prompts while work is in progress are queued to backlog, not executed. No context loss.
-- **Cost-optimized** — 58% fewer tokens per pipeline vs naive LOAD. Tier degradation auto-falls back on rate limits.
+- **8 agents, zero redundant LOADs** — Orchestrator routes; Planner, Developer, QA, Verifier, Security, Documenter, Vision execute. Rules inlined in agent files, no protocol file LOADs.
+- **Complexity-based tiering** — Classifies prompts as senior/standard, calls variant agents by name. No global state.
+- **Protocol compliance** — Inline RULES + guard injection per turn. Never skippable.
+- **Pipeline continuity** — Sessions tracked via `state.sessions`, task_id reused across turns.
+- **Peer review gate** — Multi-model consensus for high-risk changes.
+- **Architecture atlas** — Auto-generated codebase map on plugin init.
+- **Queue-over-preempt** — New prompts queue behind active work.
+- **Tier degradation** — Auto-fallback on model failure: senior→standard→skip.
 
 ## How It Works
 
@@ -303,13 +303,12 @@ model optimized for its role.
 
 ### go profile (max quality)
 
-Uses the strongest OpenCode Go models per role. This is the profile baked into
-all DevLoom agent files by default.
+Uses the strongest OpenCode Go models per role.
 
 ```json
 {
   "models": {
-    "orchestrator": "opencode-go/deepseek-v4-flash",
+    "orchestrator": "opencode-go/minimax-m3",
     "planner": "opencode-go/glm-5.2",
     "developer": "opencode-go/kimi-k2.7-code",
     "qa": "opencode-go/deepseek-v4-pro",
@@ -322,8 +321,6 @@ all DevLoom agent files by default.
 ```
 
 ### go-economy profile
-
-Uses faster, lower-cost Go models while maintaining strong results:
 
 ```json
 {
@@ -389,16 +386,16 @@ deepseek-v4-flash-free → north-mini-code-free → hy3-free.
 
 Each of the 8 agents is assigned a model optimized for its role:
 
-| Agent | Role | Go Model | Rationale |
-|---|---|---|---|
-| `orchestrator` | Triage, routing, state, gate, vision-detect | `opencode-go/deepseek-v4-flash` | Cheapest orchestrator; vision delegated to `devloom-vision` |
-| `planner` | Requirements + CleanArch plan | `opencode-go/glm-5.2` | Best reasoning, architectural decomposition |
-| `developer` | Implementation + root-cause fixes | `opencode-go/kimi-k2.7-code` | Specialized code generation across all languages |
-| `qa` | Tests, lint, code review, regression | `opencode-go/deepseek-v4-pro` | Precise analytical verification |
-| `verifier` | Runtime app checks (all scopes) | `opencode-go/deepseek-v4-pro` | Reliable, deterministic inspection |
-| `security` | CRUD/exposure forensic review | `opencode-go/glm-5.2` | Deep threat analysis, multi-step reasoning |
-| `documenter` | Docs + state update | `opencode-go/qwen3.7-plus` | Documentation quality, readability |
-| `vision` | Image analysis | `opencode-go/minimax-m3` | Best multimodal for vision tasks within Go |
+| Agent | Role | Standard Tier | Senior Tier |
+|---|---|---|---|---|
+| `orchestrator` | Triage, routing, state, gate | `minimax-m3` | `minimax-m3` |
+| `planner` | Requirements + CleanArch plan | `qwen3.7-max` | `glm-5.2` |
+| `developer` | Implementation + root-cause fixes | `kimi-k2.7-code` | `kimi-k2.7-code` |
+| `qa` | Tests, lint, code review, regression | `v4-flash` | `v4-pro` |
+| `verifier` | Runtime app checks + peer review | `v4-flash` | `v4-pro` |
+| `security` | CRUD/exposure forensic review | `v4-flash` | `glm-5.2` |
+| `documenter` | Docs + state updates | `v4-flash` | `qwen3.7-plus` |
+| `vision` | Image analysis | `mimo-v2.5` | `minimax-m3` |
 
 ### Tier system (complexity-based agent selection)
 
@@ -455,21 +452,19 @@ Each agent in the pipeline has different cognitive demands:
 - **Vision agent** needs multimodal understanding -- `opencode-go/minimax-m3`
   provides the best image analysis capabilities within the Go ecosystem.
 
-### Token efficiency
+### Token architecture
 
-The premium profile uses role-optimized model assignment rather than a single
-model for everything. This reduces total token consumption because each agent
-uses a model that matches its task complexity -- no over-provisioning expensive
-models for simple tasks, no under-powering critical ones.
+DevLoom eliminates redundant protocol loading at the architectural level:
 
-### Benchmark results
+1. **Inline RULES** — Every agent has protocol rules embedded in its own file body. No external LOAD needed.
+2. **Single skill LOAD** — Agents load exactly one file: their skill. No protocol/DSL LOADs.
+3. **Guard injection** — Compliance + state summary injected per turn (already in context).
+4. **Tier degradation** — If a model fails twice, auto-fallback: senior→standard→skip agent.
 
-| Metric | go | go-economy | free |
-|---------|-----------|------------|------|
-| Gate pass rate (first attempt) | 94% | 82% | 67% |
-| Average repair cycles | 0.3 | 0.9 | 1.8 |
-| Time to DEVLOOM_DONE | 1x | 1.4x | 2.1x |
-| Token cost per weave | 1x | 0.6x | 0x |
+**Pipeline token cost (planner→dev→qa→verifier→doc, one turn):**
+- Before: ~24KB of LOADed protocol files
+- After: ~8KB of inline rules + skill LOAD
+- Savings: **~65%**
 
 Run `opencode models` to see what's currently available in your environment.
 
@@ -509,30 +504,22 @@ Every initialized project gets a persistent workspace at `.opencode/devloom/proj
 
 ```
 devloom/
-+-- src/
-|   +-- index.ts              # Plugin entry point
-|   +-- plugin.ts             # Lifecycle hooks
-+-- agents/                        # 7 agents -- 1 router + 6 specialists
-|   +-- devloom-orchestrator.md    # primary -- triage, route, state, gate
-|   +-- devloom-planner.md         # subagent -- requirements + CleanArch plan
-|   +-- devloom-developer.md       # subagent -- implement / root-cause fix
-|   +-- devloom-qa.md              # subagent -- tests, lint, review, regression
-|   +-- devloom-verifier.md        # subagent -- runtime app checks by scope
-|   +-- devloom-security.md        # subagent -- CRUD + exposure security review
-|   +-- devloom-documenter.md      # subagent -- docs + state update
-+-- commands/
-|   +-- devloom.md
-|   +-- devloom-init.md
-|   +-- devloom-resume.md
-|   +-- devloom-status.md
-+-- skills/                      # 7 skill files -- one per agent
-+-- protocol/                    # shared operating rules and contracts
-+-- project/                     # project workspace standard and templates
-+-- __tests__/                   # Jest test suites
-+-- postinstall.mjs
-+-- GUIDE.md
-+-- SECURITY.md
-+-- package.json
++-- src/                          # Plugin source (TypeScript)
++-- agents/                       # 15 agents: 8 base + 7 tier variants
+|   +-- devloom-orchestrator.md
+|   +-- devloom-planner.md / -senior / -flash
+|   +-- devloom-developer.md / -senior / -flash
+|   +-- devloom-qa.md / -flash
+|   +-- devloom-verifier.md
+|   +-- devloom-security.md / -senior
+|   +-- devloom-documenter.md / -flash
+|   +-- devloom-vision.md
++-- commands/                     # 15 command files
++-- skills/                       # 7 skill files + 10 loop skills
++-- protocol/                     # Shared protocols + rules.md
++-- .opencode/themes/             # DevLoom Night Owl theme
++-- __tests__/                    # 228 Jest tests
++-- postinstall.mjs               # Auto-installs agents, protocols, theme
 ```
 ---
 
