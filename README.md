@@ -30,8 +30,8 @@ into verified, documented, production-ready software — not just generated code
          v
    ORCHESTRATOR (never implements — routes only)
          |
-         +-- CLASSIFY: complex? senior tier. Medium? mid. Simple? junior.
-         |              Then call the right variant agent by name.
+          +-- CLASSIFY: complex? senior tier. Standard? Base agent.
+          |              Then call the right variant by name.
          |
          +-- TRIAGE: pick minimal chain for intent
          |     feature → planner > developer > qa > documenter
@@ -59,7 +59,7 @@ into verified, documented, production-ready software — not just generated code
 | Documenter | Docs + state updates | `ship/documentation` |
 | Vision | Image/screenshot analysis | `build/vision-analysis` |
 
-Each agent has variant files for complexity tiers: `-senior` (strongest models), base (mid), `-flash` (economy).
+Each agent has variant files: `-senior` (strongest models) or base (standard tier). Protocol rules are inlined in every agent — no external LOAD needed beyond a single skill file.
 
 ---
 
@@ -94,9 +94,9 @@ npm install && npm run build && node postinstall.mjs
 }
 ```
 
-When OpenCode opens a project that uses DevLoom, the plugin auto-bootstraps
-`.opencode/devloom/project/` and normalizes legacy state files into the compact
-canonical format before you run any command.
+The plugin auto-bootstraps `.opencode/devloom/project/`, generates the
+Architecture Atlas (`context/atlas.md`), and creates `.opencode/devloom/.tmp/`
+for temporary files — all on OpenCode startup.
 
 ### Theme
 
@@ -120,11 +120,9 @@ root. OpenCode loads it automatically when you open the devloom directory.
 Long sessions make models "forget" prompt-only rules. The plugin enforces the
 DevLoom flow deterministically, every turn — no reminders needed:
 
-- **Per-message guard** (`chat.message` + system transform): a ~40-token synthetic
-  note is injected on every user message — routing rule for the main agent
-  ("code work → `task(devloom-orchestrator)`"), delegation protocol + live
-  pipeline state (`phase/ticket/next`) for the orchestrator. Worker agents are
-  left untouched.
+- **Per-message guard** (`chat.message` + system transform): injects compliance
+  requirements + protocol rules + live pipeline state into ALL devloom agents
+  (orchestrator and sub-agents) every turn.
 - **Hard delegation guard** (`tool.execute.before`): if the orchestrator tries to
   `write`/`edit`/`patch` any file outside `.opencode/devloom/`, the call is
   blocked with an error telling it to delegate via `task()`. State persistence
@@ -249,7 +247,7 @@ with automatic circuit-breaking via token budget limits.
 Start a loop tick manually:
 
 ```bash
-node scripts/loop-run.mjs --pattern daily-triage
+node .opencode/devloom/scripts/loop-run.mjs --pattern daily-triage
 ```
 
 In OpenCode, start a background loop:
@@ -288,7 +286,7 @@ The same defect is never rediscovered -- the registry prevents duplication.
 
 ## Model Configuration
 
-DevLoom provides three model profiles. Each maps every agent to a specific
+DevLoom provides five model profiles. Each maps every agent to a specific
 model optimized for its role.
 
 ### Profile comparison
@@ -434,23 +432,19 @@ delivers the highest-quality results from the OpenCode platform.
 
 ### Why go?
 
-Each agent in the pipeline has different cognitive demands:
+Each agent in the pipeline has different cognitive demands. DevLoom assigns
+role-optimized models via the tier system (senior/standard):
 
-- **Orchestrator** runs every turn and consumes the most tokens by volume.
-  Vision analysis is delegated to `devloom-vision` (GLM 5.2), so the
-  orchestrator itself can use a cheap, fast text model --
-  `opencode-go/deepseek-v4-flash` minimizes spend.
-- **Planning agents** (Planner, Analyst, Architect) need reliable analytical
-  planning -- `opencode-go/deepseek-v4-pro` excels here.
-- **Code agents** (Developer, Explorer, Repair) need top-tier generation quality
-  across languages and frameworks -- `opencode-go/kimi-k2.7-code` is the best choice.
-- **Verification agents** (QA, Route Verifier, Form Verifier, API Verifier, Security, RCA,
-  Regression) need precision and determinism -- `opencode-go/deepseek-v4-pro`
-  delivers consistent, accurate results.
-- **Recovery agent** runs frequently and needs to be fast/cheap --
-  `opencode-go/deepseek-v4-flash` provides the best cost-speed balance.
-- **Vision agent** needs multimodal understanding -- `opencode-go/minimax-m3`
-  provides the best image analysis capabilities within the Go ecosystem.
+| Agent | Standard | Senior (complex) |
+|-------|----------|-------------------|
+| Orchestrator | `minimax-m3` (multimodal, fast) | `minimax-m3` |
+| Planner | `qwen3.7-max` (strong reasoning) | `glm-5.2` (deep analysis) |
+| Developer | `kimi-k2.7-code` (code-specialized) | `kimi-k2.7-code` |
+| QA | `v4-flash` (fast review) | `v4-pro` (thorough verification) |
+| Verifier | `v4-flash` (fast checks) | `v4-pro` (deep inspection) |
+| Security | `v4-flash` (light review) | `glm-5.2` (forensic depth) |
+| Documenter | `v4-flash` (fast docs) | `qwen3.7-plus` (quality docs) |
+| Vision | `mimo-v2.5` (efficient vision) | `minimax-m3` (best vision) |
 
 ### Token architecture
 
