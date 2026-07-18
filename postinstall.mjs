@@ -98,6 +98,7 @@ const COMMANDS_DIR = resolve(CONFIG_DIR, "commands")
 const SKILLS_DIR = resolve(CONFIG_DIR, "skills")
 const PROTOCOL_DIR = resolve(CONFIG_DIR, "protocol")
 const AI_DIR = resolve(CONFIG_DIR, "devloom-ai")
+const THEMES_DIR = resolve(CONFIG_DIR, "themes")
 
 const AGENTS = [
   "devloom-orchestrator",
@@ -188,6 +189,39 @@ function main() {
     )
   }
 
+  // Install theme
+  console.log("\nInstalling DevLoom Night Owl theme:")
+  const themeSrc = resolve(__dirname, ".opencode", "themes", "devloom-night-owl.json")
+  const themeDest = resolve(THEMES_DIR, "devloom-night-owl.json")
+  installFile(themeSrc, themeDest, "Theme: DevLoom Night Owl", CONFIG_DIR)
+
+  // Activate theme in tui.json if no theme is set
+  const tuiPath = resolve(CONFIG_DIR, "tui.json")
+  if (existsSync(tuiPath)) {
+    try {
+      const tui = JSON.parse(readFileSync(tuiPath, "utf8"))
+      if (!tui.theme) {
+        tui.theme = "devloom-night-owl"
+        writeFileSync(tuiPath, JSON.stringify(tui, null, 2) + "\n")
+        console.log("  Theme activated in tui.json (change via /theme)")
+      } else {
+        console.log(`  Theme already set: ${tui.theme} (change via /theme)`)
+      }
+    } catch {
+      console.log("  Skipping tui.json update (parse error)")
+    }
+  } else {
+    try {
+      writeFileSync(tuiPath, JSON.stringify({
+        $schema: "https://opencode.ai/tui.json",
+        theme: "devloom-night-owl"
+      }, null, 2) + "\n")
+      console.log("  Created tui.json with DevLoom Night Owl theme")
+    } catch {
+      console.log("  Could not create tui.json")
+    }
+  }
+
   if (!installFailed) {
     console.log(`
 DevLoom installed successfully!
@@ -197,6 +231,8 @@ Start weaving:
   /devloom-status
 
 Protocol modules available at ~/.config/opencode/protocol/
+
+Theme: DevLoom Night Owl active (change via /theme or edit tui.json)
 
 Debug mode:
   DEVLOOM_DEBUG=1 opencode @devloom-orchestrator
