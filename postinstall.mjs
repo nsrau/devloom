@@ -191,6 +191,7 @@ function main() {
 
   // Install theme
   console.log("\nInstalling DevLoom Night Owl theme:")
+  ensureDir(THEMES_DIR)
   const themeSrc = resolve(__dirname, ".opencode", "themes", "devloom-night-owl.json")
   const themeDest = resolve(THEMES_DIR, "devloom-night-owl.json")
   installFile(themeSrc, themeDest, "Theme: DevLoom Night Owl", CONFIG_DIR)

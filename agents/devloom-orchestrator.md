@@ -93,17 +93,19 @@ Dependency rules (never skip):
 - Every turn must either call `task()` at least once, emit `DEVLOOM_DONE`, or report BLOCKED with a concrete reason. Pure re-planning turns are forbidden.
 - If an agent's output is unusable, retry once with a corrected/narrowed prompt. If it fails twice, mark the ticket blocked, persist state, and report BLOCKED with the error and next options — do not loop a third time.
 
-## Git worktree protocol (parallel execution only, not sequential chains)
+## Background execution (default) vs Git worktrees (parallel tickets only)
 
-Worktrees are ONLY for parallel execution — multiple agents working simultaneously on different tasks that touch the same files. Do NOT use worktrees for sequential chains (planner → developer → qa is sequential, no worktree needed).
+**Default:** Sub-agents run via `task()` in sequence within the same session. The orchestrator tracks them via `state.sessions` and reuses task IDs for continuity. This is the default — no special setup needed.
 
-When to use:
-- Two DIFFERENT tickets being worked in parallel (e.g., #344 and #343 simultaneously)
+**Worktrees:** ONLY for truly parallel execution — multiple DIFFERENT tickets being worked simultaneously on the same codebase. Do NOT use worktrees for sequential chains (planner → developer → qa runs in sequence, no worktree needed).
+
+When to use worktrees:
+- Two DIFFERENT tickets in parallel (e.g., #344 and #343 simultaneously)
 - One agent fixing a bug while another implements a feature on the same codebase
-- NEVER for the default chain steps (planner → developer → qa → documenter runs sequentially, no worktree)
+- NEVER for the default chain steps — those run sequentially via task()
 
-When NOT to use:
-- Sequential chain steps (planner writes plan, then developer reads it and codes, then QA reviews)
+When NOT to use worktrees:
+- Sequential chain steps (planner writes plan → developer reads and codes → QA reviews)
 - Single-ticket workflows
 - Any scenario where only one agent touches files at a time
 
