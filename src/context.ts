@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync, statSync } from "node:fs"
-import { join } from "node:path"
+import { join, basename } from "node:path"
 
-export const CONTEXT_DIR = ["opencode", "devloom", "context"]
+export const CONTEXT_DIR = [".opencode", "devloom", "context"]
 export const CONTEXT_FILES = ["project.md", "conventions.md", "security.md", "examples.md"] as const
 export const MVI_MAX_LINES = 200
 
@@ -517,4 +517,67 @@ export function autoGenerateContextIfMissing(rootDir: string): boolean {
   if (summary.hasContext) return false
   const result = generateContext(rootDir, false)
   return result.generated.length > 0
+}
+
+function dirTree(rootDir: string, dir: string, depth = 0, maxDepth = 4): string {
+  if (depth > maxDepth) return ""
+  const absPath = join(rootDir, dir)
+  let entries: string[]
+  try {
+    entries = readdirSync(absPath)
+  } catch {
+    return ""
+  }
+  const indent = "  ".repeat(depth)
+  let result = ""
+  const dirs: string[] = []
+  const files: string[] = []
+  for (const entry of entries.sort()) {
+    if (entry.startsWith(".") || entry === "node_modules" || entry === "dist" || entry === "coverage" || entry === ".git") continue
+    const full = join(absPath, entry)
+    try {
+      if (statSync(full).isDirectory()) dirs.push(entry)
+      else files.push(entry)
+    } catch {}
+  }
+  for (const d of dirs) {
+    result += `${indent}${d}/\n`
+    result += dirTree(rootDir, join(dir, d), depth + 1, maxDepth)
+  }
+  for (const f of files.slice(0, 8)) {
+    result += `${indent}${f}\n`
+  }
+  if (files.length > 8) result += `${indent}... (+${files.length - 8} more)\n`
+  return result
+}
+
+export function buildAtlas(rootDir: string): string {
+  const pkg = readPackageJson(rootDir)
+  const name = pkg?.name || basename(rootDir)
+  return [
+    `# Architecture Atlas: ${name}`,
+    `> Auto-generated. Edit manually to override. Update when project structure changes significantly.`,
+    "",
+    "## Directory Tree",
+    "```",
+    dirTree(rootDir, ".").trim(),
+    "```",
+    "",
+    "## Key Files",
+    "- package.json" + (pkg ? ` (${(pkg as Record<string, unknown>).description || "no description"})` : ""),
+    "- tsconfig.json" + (existsSync(join(rootDir, "tsconfig.json")) ? " (TypeScript config)" : " (not found)"),
+    "- README.md" + (existsSync(join(rootDir, "README.md")) ? " (project docs)" : " (not found)"),
+    "",
+    "## Tech Stack",
+    ...Object.entries(detectTechStack(rootDir)).map(([k, v]) => `- ${k}: ${v}`),
+    "",
+  ].join("\n")
+}
+
+export function ensureAtlas(rootDir: string): boolean {
+  const atlasPath = join(contextDir(rootDir), "atlas.md")
+  if (existsSync(atlasPath)) return false
+  const atlas = buildAtlas(rootDir)
+  writeFileSync(atlasPath, atlas)
+  return true
 }

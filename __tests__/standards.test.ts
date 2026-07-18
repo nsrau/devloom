@@ -86,8 +86,8 @@ describe("DevLoom operating standard", () => {
 })
 
 describe("Agent file standards", () => {
-  test("exactly 8 agent files exist", () => {
-    expect(AGENT_FILES.length).toBe(8)
+  test("exactly 15 agent files exist (8 base + 7 tier variants)", () => {
+    expect(AGENT_FILES.length).toBe(15)
   })
 
   test.each(ALL_AGENT_NAMES)("agent devloom-%s has a model field", (name) => {
@@ -139,7 +139,7 @@ describe("Profile definitions", () => {
   test("config profile is go with deepseek-v4-flash orchestrator", () => {
     const config = JSON.parse(read(".opencode/devloom/config.json"))
     expect(config.profile).toBe("go")
-    expect(config.models.orchestrator).toBe("opencode-go/deepseek-v4-flash")
+    expect(config.models.orchestrator).toBe("opencode-go/minimax-m3")
   })
 
   test("config models cover exactly the 8 agent roles", () => {
@@ -282,7 +282,6 @@ describe("Profile detection and fallback behavior", () => {
     const config = JSON.parse(read(".opencode/devloom/config.json"))
     expect(config).toHaveProperty("profile")
     expect(config).toHaveProperty("resolvedProfile")
-    expect(config).toHaveProperty("resolvedAt")
     expect(config).toHaveProperty("models")
     expect(config).toHaveProperty("overrides")
   })

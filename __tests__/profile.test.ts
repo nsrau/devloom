@@ -12,6 +12,7 @@ const ALL_GO_MODELS = [
   "opencode-go/deepseek-v4-flash",
   "opencode-go/qwen3.6-plus",
   "opencode-go/qwen3.7-plus",
+  "opencode-go/qwen3.7-max",
   "opencode-go/mimo-v2.5",
   "opencode-go/mimo-v2.5-pro",
   "opencode-go/minimax-m3",
@@ -97,11 +98,12 @@ describe("profile.mjs", () => {
     const profile = await importProfile()
     const config = profile.cmdSet("go")
     expect(config.models.orchestrator).toBe("opencode-go/deepseek-v4-flash")
-    expect(config.models.planner).toBe("opencode-go/deepseek-v4-pro")
+    expect(config.models.planner).toBe("opencode-go/glm-5.2")
     expect(config.models.developer).toBe("opencode-go/kimi-k2.7-code")
     expect(config.models.qa).toBe("opencode-go/deepseek-v4-pro")
     expect(config.models.security).toBe("opencode-go/glm-5.2")
-    expect(config.models.vision).toBe("opencode-go/glm-5.2")
+    expect(config.models.documenter).toBe("opencode-go/qwen3.7-plus")
+    expect(config.models.vision).toBe("opencode-go/minimax-m3")
     expect(Object.keys(config.fallbacks || {})).toHaveLength(0)
   })
 

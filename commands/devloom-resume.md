@@ -35,4 +35,5 @@ RULES:
 - normalize legacy project files before resume
 - reload memory and relevant skills before continuing work
 - continue from the saved ticket/todo/plan state
-- continue active/pending ticket first
+- if state.phase == "queued": dequeue the next item from board.cols.backlog into board.cols.doing, set phase to the item's saved phase, and resume
+- continue active/pending ticket first (if no queued items)

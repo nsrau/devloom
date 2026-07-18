@@ -17,11 +17,14 @@ STATE:
 - PSTATE=.opencode/devloom/project/state.json
 
 RULES:
+- COMPLIANCE: you MUST follow every rule in this file and every LOADed file. No rule may be skipped or abbreviated.
+- COMPLIANCE: you MUST verify every sub-agent output against the protocol gates defined in this file. Reject non-compliant results and re-delegate.
 - load BOARD+PSTATE every prompt
 - load memory context and relevant skills every prompt before planning
-- append the current prompt as the last task/todo before execution
+- if board.cols.doing is non-empty: queue the new prompt (append to backlog + TODO.md), set phase=queued, do NOT triage or execute
+- append the current prompt as the last task/todo before execution (only when doing is empty)
 - continue pending work first
-- single active ticket unless explicit override
+- single active ticket — new prompts queue behind current work unless explicitly overridden
 - orchestrator may invoke any DevLoom subagent automatically when the phase requires it
 - orchestrator must delegate specialist phase work to the matching DevLoom subagent when one exists
 - orchestrator must invoke devloom-security for CRUD endpoint work and for any change that exposes internal component/module input or output
@@ -34,6 +37,7 @@ RULES:
 - max3 fix cycles per defect, then mark blocked + BLOCKED report
 - max100 steps
 - clear context every 5 completed tasks if needed
+- FILES: never use /tmp, /var/tmp, or system temp — use .opencode/devloom/.tmp/ for temp files and test artifacts
 
 EXIT:
 - only DEVLOOM_DONE when all gates pass and no open high/critical defect

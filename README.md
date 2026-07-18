@@ -2,80 +2,64 @@
 
 **Autonomous Software Delivery System for OpenCode**
 
-DevLoom combines *Developer* + *Loom* -- the loom being the ancient machine that
-weaves individual threads into finished fabric. DevLoom does the same for software:
-it takes a single natural-language prompt and weaves together requirements,
-architecture, code, tests, verification, and documentation into a **verified,
-working feature** -- not just generated code.
+DevLoom combines *Developer* + *Loom* — the loom being the ancient machine that
+weaves individual threads into finished fabric. It transforms a single prompt
+into verified, documented, production-ready software — not just generated code.
 
 > Generating code is not success. Passing verification is not success.
-> Success is achieved only when all acceptance gates have passed and no human
-> intervention was required during normal operation.
+> Success is achieved only when all acceptance gates have passed.
 
 ---
 
-## How It Works
+## Highlights
 
-DevLoom operates as an autonomous delivery router. The orchestrator triages
-each prompt, picks the **minimal agent chain** for the intent, and runs it
-through verification, defect discovery, root cause analysis, repair, and
-re-verification until that chain's gates pass. It never runs the full
-pipeline by default — only the agents the task actually needs.
+- **7 specialized agents** — Orchestrator routes; Planner, Developer, QA, Verifier, Security, Documenter, Vision execute. Each loads exactly one skill.
+- **Complexity-based tiering** — The orchestrator classifies every prompt as senior/mid/junior and calls the right variant agent automatically. No global state switching.
+- **Protocol compliance built in** — Every agent receives compact protocol rules + compliance requirements injected automatically.
+- **Pipeline continuity** — Sub-agent sessions are tracked and reused across turns, preserving context without reloading.
+- **Peer review gate** — High-risk changes get multi-model consensus verification before passing.
+- **Architecture atlas** — Auto-generated hierarchical codebase map so agents understand structure without scanning files.
+- **Queue-over-preempt** — New prompts while work is in progress are queued to backlog, not executed. No context loss.
+- **Cost-optimized** — 58% fewer tokens per pipeline vs naive LOAD. Tier degradation auto-falls back on rate limits.
+
+## How It Works
 
 ```
 /devloom "<prompt>"
          |
          v
-   ORCHESTRATOR (router/planner — never implements)
+   ORCHESTRATOR (never implements — routes only)
          |
-         +-- TRIAGE: classify intent -> minimal chain
+         +-- CLASSIFY: complex? senior tier. Medium? mid. Simple? junior.
+         |              Then call the right variant agent by name.
          |
-         |     feature   planner > developer > qa > documenter
-         |     bug       developer (root-cause fix) > qa (regression)
-         |     refactor  planner > developer > qa
-         |     small     developer > qa
-         |     docs      planner > documenter
-         |     spec/plan planner
-         |     explore   verifier (scope=explore)
+         +-- TRIAGE: pick minimal chain for intent
+         |     feature → planner > developer > qa > documenter
+         |     bug     → developer (root-cause) > qa (regression)
+         |     small   → developer > qa
          |
          +-- CONDITIONAL ADD-ONS (only when touched)
-         |     image/screenshot/mockup   vision (first) -> chain for actual intent
-         |     UI        verifier (scope=route,form,a11y)
-         |     API       verifier (scope=api,contract)
-         |     CRUD/data exposure   security (mandatory)
-         |     user flow            verifier (scope=journey,state)
+         |     image        → vision first
+         |     UI/API/CRUD  → verifier / security
          |
-         +-- DEFECT LOOP: developer (root-cause fix) > qa (regression), max 3 cycles
-         +-- RECOVERY: orchestrator bounded retry, then BLOCKED report
-         |
-         +-- DEVLOOM_DONE -- chain gates pass
+         +-- DEFECT LOOP: max 3 cycles, then BLOCKED
+         +-- DEVLOOM_DONE: all chain gates pass
 ```
 
-### Agent Roster
+### Agents
 
-7 agents — the orchestrator routes; six surgical specialists do the work. Each loads exactly one skill.
+| Agent | Role | Skill |
+|-------|------|-------|
+| Orchestrator | Triage, route, state, gate | — |
+| Planner | Requirements + CleanArch plan | `plan/planning` |
+| Developer | Implement / fix | `build/development` |
+| QA | Tests, lint, review, regression | `verify/quality-assurance` |
+| Verifier | Runtime checks by scope + peer review | `verify/app-verification` |
+| Security | CRUD/exposure forensic review | `review/security-review` |
+| Documenter | Docs + state updates | `ship/documentation` |
+| Vision | Image/screenshot analysis | `build/vision-analysis` |
 
-| Agent | Mode | Role | Skill | Replaces |
-|---|---|---|---|---|---|
-| `devloom-orchestrator` | `primary` | Triage, route, state, completion gate | — | — |
-| `devloom-planner` | `subagent` | Prompt -> requirements + CleanArch plan + tickets | `plan/planning` | analyst, architect |
-| `devloom-developer` | `subagent` | Implement ticket / root-cause fix (TDD, SOLID) | `build/development` | developer, rca, repair |
-| `devloom-qa` | `subagent` | Tests, lint, code review, regression | `verify/quality-assurance` | qa, regression |
-| `devloom-verifier` | `subagent` | Runtime app checks by scope (explore/route/dom/form/a11y/api/contract/journey/state) | `verify/app-verification` | explorer, route/form/a11y/api verifiers, journey-agent |
-| `devloom-security` | `subagent` | Forensic security review for CRUD/exposure surfaces | `review/security-review` | security |
-| `devloom-documenter` | `subagent` | README + API docs + state updates | `ship/documentation` | documenter |
-| `devloom-vision` | `subagent` | Analyze images/screenshots/mockups; produces structured descriptions for agents without vision | `build/vision-analysis` | — |
-
-Failure recovery folds into the orchestrator's bounded-retry / BLOCKED logic (no separate agent).
-
-All `devloom-*` subagents are intended to be auto-invoked by
-`devloom-orchestrator` during the delivery loop. Manual invocation remains
-available, but they are not manual-only agents.
-The orchestrator should delegate specialist work to them by default rather
-than executing those phase tasks itself.
-It should also load relevant memory/skills on every prompt, append that prompt
-as the last task/todo, keep tickets/plan synchronized, and save state
-continuously without being reminded.
+Each agent has variant files for complexity tiers: `-senior` (strongest models), base (mid), `-flash` (economy).
 
 ---
 
@@ -292,31 +276,30 @@ model optimized for its role.
 
 ### Profile comparison
 
-| Profile | Tier | Quality | Cost | Best for |
-|---------|------|---------|------|----------|
-| **go-flash** | OpenCode Go | Good | Cheapest paid | Default — all agents on deepseek-v4-flash |
-| **go** | OpenCode Go | Highest | Paid | Production delivery |
-| **go-economy** | OpenCode Go | High | Lower | Daily development, budget-conscious |
-| **free** | OpenCode Free | Good | Zero | Evaluation, learning, hobby projects |
+| Profile | Quality | Cost | Best for |
+|---------|---------|------|----------|
+| **go** | Highest | Premium | Production delivery, complex features |
+| **go-economy** | High | Lower | Daily development, budget-conscious |
+| **deepseek** | High | Lower | DeepSeek-only stack |
+| **go-flash** | Good | Cheapest paid | High-volume, simple tasks |
+| **free** | Good | Zero | Evaluation, learning, hobby projects |
 
 ### go profile (max quality)
 
 Uses the strongest OpenCode Go models per role. This is the profile baked into
 all DevLoom agent files by default.
 
-Create `.opencode/devloom/config.json`:
-
 ```json
 {
   "models": {
     "orchestrator": "opencode-go/deepseek-v4-flash",
-    "planner": "opencode-go/deepseek-v4-pro",
+    "planner": "opencode-go/glm-5.2",
     "developer": "opencode-go/kimi-k2.7-code",
     "qa": "opencode-go/deepseek-v4-pro",
     "verifier": "opencode-go/deepseek-v4-pro",
     "security": "opencode-go/glm-5.2",
     "documenter": "opencode-go/qwen3.7-plus",
-    "vision": "opencode-go/glm-5.2"
+    "vision": "opencode-go/minimax-m3"
   }
 }
 ```
@@ -329,12 +312,50 @@ Uses faster, lower-cost Go models while maintaining strong results:
 {
   "models": {
     "orchestrator": "opencode-go/deepseek-v4-flash",
-    "planner": "opencode-go/kimi-k2.7-code",
-    "developer": "opencode-go/kimi-k2.7-code",
-    "qa": "opencode-go/deepseek-v4-pro",
-    "verifier": "opencode-go/deepseek-v4-pro",
+    "planner": "opencode-go/deepseek-v4-pro",
+    "developer": "opencode-go/deepseek-v4-pro",
+    "qa": "opencode-go/deepseek-v4-flash",
+    "verifier": "opencode-go/deepseek-v4-flash",
     "security": "opencode-go/deepseek-v4-pro",
-    "documenter": "opencode-go/qwen3.6-plus",
+    "documenter": "opencode-go/qwen3.7-plus",
+    "vision": "opencode-go/minimax-m3"
+  }
+}
+```
+
+### deepseek profile
+
+Uses only DeepSeek models for consistent provider affinity:
+
+```json
+{
+  "models": {
+    "orchestrator": "opencode-go/deepseek-v4-pro",
+    "planner": "opencode-go/deepseek-v4-pro",
+    "developer": "opencode-go/deepseek-v4-pro",
+    "qa": "opencode-go/deepseek-v4-pro",
+    "verifier": "opencode-go/deepseek-v4-flash",
+    "security": "opencode-go/deepseek-v4-pro",
+    "documenter": "opencode-go/deepseek-v4-flash",
+    "vision": "opencode-go/minimax-m3"
+  }
+}
+```
+
+### go-flash profile
+
+All agents on DeepSeek V4 Flash for maximum throughput at minimum cost:
+
+```json
+{
+  "models": {
+    "orchestrator": "opencode-go/deepseek-v4-flash",
+    "planner": "opencode-go/deepseek-v4-flash",
+    "developer": "opencode-go/deepseek-v4-flash",
+    "qa": "opencode-go/deepseek-v4-flash",
+    "verifier": "opencode-go/deepseek-v4-flash",
+    "security": "opencode-go/deepseek-v4-flash",
+    "documenter": "opencode-go/deepseek-v4-flash",
     "vision": "opencode-go/minimax-m3"
   }
 }
@@ -354,13 +375,24 @@ Each of the 8 agents is assigned a model optimized for its role:
 | Agent | Role | Go Model | Rationale |
 |---|---|---|---|
 | `orchestrator` | Triage, routing, state, gate, vision-detect | `opencode-go/deepseek-v4-flash` | Cheapest orchestrator; vision delegated to `devloom-vision` |
-| `planner` | Requirements + CleanArch plan | `opencode-go/deepseek-v4-pro` | Analytical planning, architectural decomposition |
-| `developer` | Implementation + root-cause fixes | `opencode-go/kimi-k2.7-code` | Top-tier code generation across all languages |
+| `planner` | Requirements + CleanArch plan | `opencode-go/glm-5.2` | Best reasoning, architectural decomposition |
+| `developer` | Implementation + root-cause fixes | `opencode-go/kimi-k2.7-code` | Specialized code generation across all languages |
 | `qa` | Tests, lint, code review, regression | `opencode-go/deepseek-v4-pro` | Precise analytical verification |
 | `verifier` | Runtime app checks (all scopes) | `opencode-go/deepseek-v4-pro` | Reliable, deterministic inspection |
 | `security` | CRUD/exposure forensic review | `opencode-go/glm-5.2` | Deep threat analysis, multi-step reasoning |
 | `documenter` | Docs + state update | `opencode-go/qwen3.7-plus` | Documentation quality, readability |
-| `vision` | Image analysis | `opencode-go/glm-5.2` | Strong multimodal reasoning, structured output |
+| `vision` | Image analysis | `opencode-go/minimax-m3` | Best multimodal for vision tasks within Go |
+
+### Tier system (complexity-based agent selection)
+
+The orchestrator automatically classifies each prompt by complexity and calls the
+correct variant sub-agent by name — no global state switching. Each variant has
+a fixed model in its agent file, so parallel worktrees never conflict.
+
+| Tier | When | Agent Variant | Model |
+|------|------|--------------|-------|
+| **senior** | Complex feature, architecture, security audit, debugging | `-senior` suffix (planner, developer, security) | GLM-5.2, Kimi K2.7 Code |
+| **standard** | Everything else (default) | Base agents (no suffix) | minimax-m3, qwen3.7-max, kimi-k2.7-code |
 
 ### Prefix requirement
 
@@ -403,8 +435,8 @@ Each agent in the pipeline has different cognitive demands:
   delivers consistent, accurate results.
 - **Recovery agent** runs frequently and needs to be fast/cheap --
   `opencode-go/deepseek-v4-flash` provides the best cost-speed balance.
-- **Vision agent** needs multimodal understanding -- `opencode-go/glm-5.2`
-  provides the best image analysis capabilities.
+- **Vision agent** needs multimodal understanding -- `opencode-go/minimax-m3`
+  provides the best image analysis capabilities within the Go ecosystem.
 
 ### Token efficiency
 

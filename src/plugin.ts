@@ -3,7 +3,7 @@ import { existsSync } from "node:fs"
 import { join } from "node:path"
 import type { Hooks, PluginInput } from "@opencode-ai/plugin"
 import { ensureProjectWorkspace } from "./bootstrap.js"
-import { autoGenerateContextIfMissing } from "./context.js"
+import { autoGenerateContextIfMissing, ensureAtlas } from "./context.js"
 import { ensureLoopWorkspace } from "./loop.js"
 import {
   ORCHESTRATOR_AGENT,
@@ -21,7 +21,7 @@ const COMPACTION_CONTEXT = [
   "(2) current pipeline state from .opencode/devloom/project/state.json and board.json (phase, active ticket, next step);",
   "(3) pending pipeline phases and open defects;",
   "(4) active git worktrees under .devloom-worktrees/ (branches, agents, merge status) — never lose track of parallel agent work;",
-   "(5) project context at .opencode/devloom/context/ — tech stack, conventions, security, examples (auto-generated, pattern-aware code generation).",
+   "(5) project context at .opencode/devloom/context/ — tech stack, conventions, security, examples, and architecture atlas (auto-generated, pattern-aware code generation).",
    "(6) loop engineering state at .opencode/devloom/loop/ — pattern, cadence, level, budget, run history.",
 ].join(" ")
 
@@ -31,6 +31,7 @@ function createLifecycleHooks(_ctx: PluginInput): Hooks {
   if (rootDir.length > 0 && existsSync(join(rootDir, ".opencode", "devloom"))) {
     ensureProjectWorkspace(rootDir)
     autoGenerateContextIfMissing(rootDir)
+    ensureAtlas(rootDir)
     ensureLoopWorkspace(rootDir)
   }
 

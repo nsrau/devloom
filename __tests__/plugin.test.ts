@@ -54,11 +54,13 @@ describe("createLifecycleHooks", () => {
     expect(output.parts[0].text).toContain("devloom-orchestrator")
   })
 
-  test("chat.message does not inject for devloom worker agents", async () => {
+  test("chat.message injects compliance guard for devloom worker agents", async () => {
     const hooks = createLifecycleHooks({} as any)
     const output = { message: { id: "msg-1", sessionID: "sess-2" }, parts: [] as any[] }
     await hooks["chat.message"]!({ sessionID: "sess-2", agent: "devloom-developer" } as any, output as any)
-    expect(output.parts).toHaveLength(0)
+    expect(output.parts).toHaveLength(1)
+    expect(output.parts[0]).toHaveProperty("text")
+    expect((output.parts[0] as any).text).toContain("COMPLIANCE")
   })
 
   test("system transform injects guard for tracked session", async () => {

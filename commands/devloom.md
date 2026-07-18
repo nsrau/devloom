@@ -105,8 +105,9 @@ RULES:
 - append every prompt as the last task/todo in `.opencode/devloom/project/tasks/TODO.md`
 - auto-create or update tickets, todos, and plan entries for the prompt
 - persist board+state every phase
-- continue pending work first unless user reprioritizes
-- one active ticket by default
+- IF board.cols.doing is non-empty: queue the prompt to backlog, do NOT start new work — the orchestrator will see the queue and exit
+- continue pending work first (only when doing is empty) unless user reprioritizes
+- one active ticket by default — new prompts are queued when doing is occupied
 - delegate specialist work to DevLoom subagents by default
 - triage first: pick the minimal agent chain for the prompt intent (see workflow.dsl CHAINS); never run the full pipeline by default
 - DEVLOOM_DONE only when the chosen chain's gates pass

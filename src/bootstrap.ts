@@ -10,6 +10,8 @@ type ProjectState = {
   next: string
   updatedAt: string
   notes: string[]
+  sessions: Record<string, string>
+  degraded: boolean
 }
 
 type ProjectBoard = {
@@ -138,6 +140,8 @@ function normalizeState(value: unknown, board: ProjectBoard, now: string): Proje
     next: typeof state.next === "string" ? state.next : "analysis",
     updatedAt: now,
     notes: normalizeStringArray(state.notes),
+    sessions: typeof state.sessions === "object" && state.sessions ? state.sessions as Record<string, string> : {},
+    degraded: typeof state.degraded === "boolean" ? state.degraded : false,
   }
 }
 

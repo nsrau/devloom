@@ -146,25 +146,27 @@ All agents default to `opencode/nemotron-3-ultra-free` — a capable free model.
 DevLoom provides three model profiles that trade off quality vs cost:
 
 | Profile | Use case | Tier |
-|---|---|---|
+|---|---|---|---|
 | `go` | Production-grade builds, maximum quality | Go (paid) |
 | `go-economy` | Good quality at lower cost | Go (paid) |
+| `deepseek` | DeepSeek-only stack | Go (paid) |
+| `go-flash` | Maximum throughput, minimum cost | Go (paid) |
 | `free` | Zero-cost experimentation | Free |
 
-The profile determines which model is assigned to each of the 8 agent roles. Premium roles (planner, QA, verifier, security) get stronger models; the `vision` role always uses a multimodal model regardless of profile. The default `go-flash` puts every non-vision role on DeepSeek V4 Flash.
+The profile determines which model is assigned to each of the 8 agent roles. Premium roles (planner, QA, verifier, security) get stronger models; the `vision` role always uses a multimodal model regardless of profile.
 
-#### go (max quality — default is go-flash)
+#### go (max quality)
 
 ```json
 {
   "models": {
-    "orchestrator": "opencode-go/glm-5.1",
-    "planner": "opencode-go/glm-5.1",
-    "developer": "opencode-go/kimi-k2.6",
+    "orchestrator": "opencode-go/deepseek-v4-flash",
+    "planner": "opencode-go/glm-5.2",
+    "developer": "opencode-go/kimi-k2.7-code",
     "qa": "opencode-go/deepseek-v4-pro",
     "verifier": "opencode-go/deepseek-v4-pro",
-    "security": "opencode-go/deepseek-v4-pro",
-    "documenter": "opencode-go/glm-5.1",
+    "security": "opencode-go/glm-5.2",
+    "documenter": "opencode-go/qwen3.7-plus",
     "vision": "opencode-go/minimax-m3"
   }
 }
@@ -175,13 +177,47 @@ The profile determines which model is assigned to each of the 8 agent roles. Pre
 ```json
 {
   "models": {
-    "orchestrator": "opencode-go/deepseek-v4-pro",
-    "planner": "opencode-go/kimi-k2.6",
-    "developer": "opencode-go/kimi-k2.6",
-    "qa": "opencode-go/deepseek-v4-pro",
-    "verifier": "opencode-go/deepseek-v4-pro",
+    "orchestrator": "opencode-go/deepseek-v4-flash",
+    "planner": "opencode-go/deepseek-v4-pro",
+    "developer": "opencode-go/deepseek-v4-pro",
+    "qa": "opencode-go/deepseek-v4-flash",
+    "verifier": "opencode-go/deepseek-v4-flash",
     "security": "opencode-go/deepseek-v4-pro",
-    "documenter": "opencode-go/qwen3.6-plus",
+    "documenter": "opencode-go/qwen3.7-plus",
+    "vision": "opencode-go/minimax-m3"
+  }
+}
+```
+
+#### go-flash
+
+```json
+{
+  "models": {
+    "orchestrator": "opencode-go/deepseek-v4-flash",
+    "planner": "opencode-go/deepseek-v4-flash",
+    "developer": "opencode-go/deepseek-v4-flash",
+    "qa": "opencode-go/deepseek-v4-flash",
+    "verifier": "opencode-go/deepseek-v4-flash",
+    "security": "opencode-go/deepseek-v4-flash",
+    "documenter": "opencode-go/deepseek-v4-flash",
+    "vision": "opencode-go/minimax-m3"
+  }
+}
+```
+
+#### deepseek
+
+```json
+{
+  "models": {
+    "orchestrator": "opencode-go/deepseek-v4-pro",
+    "planner": "opencode-go/deepseek-v4-pro",
+    "developer": "opencode-go/deepseek-v4-pro",
+    "qa": "opencode-go/deepseek-v4-pro",
+    "verifier": "opencode-go/deepseek-v4-flash",
+    "security": "opencode-go/deepseek-v4-pro",
+    "documenter": "opencode-go/deepseek-v4-flash",
     "vision": "opencode-go/minimax-m3"
   }
 }
@@ -203,6 +239,17 @@ The profile determines which model is assigned to each of the 8 agent roles. Pre
   }
 }
 ```
+
+### Complexity tiers (name-based agent selection)
+
+The orchestrator classifies every prompt by complexity and calls the correct
+variant sub-agent by name — no global state switching. Each variant has a fixed
+model, so worktrees never conflict.
+
+| Tier | Classification | Agent Variants | Model |
+|------|---------------|---------------|-------|
+| **senior** | Complex feature, architecture, debugging, security audit | `-senior` suffix (planner, developer, security) | GLM-5.2, Kimi K2.7 Code |
+| **standard** | Everything else (default) | Base agents (no suffix) | minimax-m3, qwen3.7-max, kimi-k2.7-code |
 
 ### Per-project override
 

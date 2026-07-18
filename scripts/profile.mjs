@@ -9,25 +9,48 @@ const CONFIG_PATH = ".opencode/devloom/config.json"
 const AGENTS_DIR = homedir() + "/.config/opencode/agents"
 const SOURCE_AGENTS_DIR = resolve(dirname(new URL(import.meta.url).pathname), "..", "agents")
 
-export const PROFILES = {
-  go: {
+export const TIERS = {
+  senior: {
     orchestrator: "opencode-go/deepseek-v4-flash",
-    planner: "opencode-go/deepseek-v4-pro",
+    planner: "opencode-go/glm-5.2",
     developer: "opencode-go/kimi-k2.7-code",
     qa: "opencode-go/deepseek-v4-pro",
     verifier: "opencode-go/deepseek-v4-pro",
     security: "opencode-go/glm-5.2",
     documenter: "opencode-go/qwen3.7-plus",
-    vision: "opencode-go/glm-5.2"
+    vision: "opencode-go/minimax-m3"
   },
-  "go-economy": {
+  standard: {
+    orchestrator: "opencode-go/minimax-m3",
+    planner: "opencode-go/qwen3.7-max",
+    developer: "opencode-go/kimi-k2.7-code",
+    qa: "opencode-go/deepseek-v4-flash",
+    verifier: "opencode-go/deepseek-v4-flash",
+    security: "opencode-go/deepseek-v4-flash",
+    documenter: "opencode-go/deepseek-v4-flash",
+    vision: "opencode-go/mimo-v2.5"
+  }
+}
+
+export const PROFILES = {
+  go: {
     orchestrator: "opencode-go/deepseek-v4-flash",
-    planner: "opencode-go/kimi-k2.7-code",
+    planner: "opencode-go/glm-5.2",
     developer: "opencode-go/kimi-k2.7-code",
     qa: "opencode-go/deepseek-v4-pro",
     verifier: "opencode-go/deepseek-v4-pro",
+    security: "opencode-go/glm-5.2",
+    documenter: "opencode-go/qwen3.7-plus",
+    vision: "opencode-go/minimax-m3"
+  },
+  "go-economy": {
+    orchestrator: "opencode-go/deepseek-v4-flash",
+    planner: "opencode-go/deepseek-v4-pro",
+    developer: "opencode-go/deepseek-v4-pro",
+    qa: "opencode-go/deepseek-v4-flash",
+    verifier: "opencode-go/deepseek-v4-flash",
     security: "opencode-go/deepseek-v4-pro",
-    documenter: "opencode-go/qwen3.6-plus",
+    documenter: "opencode-go/qwen3.7-plus",
     vision: "opencode-go/minimax-m3"
   },
   deepseek: {
@@ -205,6 +228,33 @@ export function applyModelsToAgentFiles(models) {
   }
 }
 
+export function cmdApplyTier(tierName, available) {
+  const tier = TIERS[tierName]
+  if (!tier) {
+    console.error("Unknown tier:", tierName)
+    console.error("Valid tiers: senior, standard")
+    process.exit(1)
+  }
+
+  const models = { ...tier }
+  const unresolved = validateModels(models, available)
+  if (unresolved.length > 0) {
+    console.error(`Tier "${tierName}" has unavailable models:`)
+    for (const u of unresolved) console.error(`  ${u.agent}: ${u.model}`)
+    process.exit(1)
+  }
+
+  applyModelsToAgentFiles(models)
+
+  const config = readConfig()
+  config.tier = tierName
+  config.tierModels = models
+  config.models = { ...models }
+  writeConfig(config)
+
+  return models
+}
+
 export function cmdSet(profileName) {
   const available = detectAvailableModels()
   const hasGo = hasGoModels(available)
@@ -275,16 +325,16 @@ export function cmdSet(profileName) {
     process.exit(1)
   }
 
+  const prev = readConfig()
   const config = {
     profile: profileName,
     resolvedProfile,
-    resolvedAt: new Date().toISOString(),
     models,
-    overrides: readConfig().overrides || {},
+    overrides: prev.overrides || {},
+    tier: prev.tier || null,
+    tierModels: prev.tierModels || null,
     availableModelsSnapshot: available,
-    fallbacks,
-    unresolved: unavailable,
-    requiresReload: true
+    fallbacks
   }
 
   writeConfig(config)
@@ -301,14 +351,17 @@ export function cmdCurrent() {
     return
   }
   console.log(`Profile: ${config.profile}`)
-  console.log(`Resolved: ${config.resolvedProfile}`)
-  console.log(`Resolved at: ${config.resolvedAt || "unknown"}`)
+  if (config.tier) console.log(`Tier: ${config.tier}`)
   console.log("")
+  const activeModels = config.tierModels || config.models
   console.log("Resolved models:")
-  for (const [agent, model] of Object.entries(config.models || {})) {
+  for (const [agent, model] of Object.entries(activeModels)) {
+    const tiered = config.tier && config.models[agent] !== model ? ` (tier: ${model})` : ""
     const overridden = config.overrides && config.overrides[agent] ? " (override)" : ""
     const fallbacked = config.fallbacks && config.fallbacks[agent] ? " (fallback)" : ""
-    console.log(`  ${agent}: ${model}${overridden}${fallbacked}`)
+    const base = config.tier ? config.models[agent] : null
+    const label = base && base !== model ? `${base} → ${model}` : model
+    console.log(`  ${agent}: ${label}${tiered}${overridden}${fallbacked}`)
   }
   if (config.unresolved && config.unresolved.length > 0) {
     console.log("")
@@ -423,11 +476,19 @@ function main() {
     case "detect":
       cmdDetect()
       break
+    case "tier":
+      if (!args[1]) { console.error("Usage: devloom profile tier <senior|balanced|junior>"); process.exit(1) }
+      if (!["senior","standard"].includes(args[1])) { console.error("Invalid tier. Valid: senior, standard"); process.exit(1) }
+      const available = detectAvailableModels()
+      cmdApplyTier(args[1], available)
+      console.log(`DevLoom tier changed to: ${args[1]}`)
+      break
     default:
       console.log("DevLoom Profile Manager")
       console.log("")
       console.log("Commands:")
       console.log("  devloom profile set <auto|go|go-economy|deepseek|go-flash|free>")
+      console.log("  devloom profile tier <senior|standard>")
       console.log("  devloom profile current")
       console.log("  devloom profile validate")
       console.log("  devloom profile apply")

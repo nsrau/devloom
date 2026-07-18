@@ -73,9 +73,11 @@ describe("buildGuardText", () => {
     expect(text).toContain("phase=impl")
   })
 
-  test("devloom worker agents get no guard", () => {
-    expect(buildGuardText("devloom-developer", "unbootstrapped")).toBeNull()
-    expect(buildGuardText("devloom-qa", "unbootstrapped")).toBeNull()
+  test("devloom worker agents get compliance guard", () => {
+    const guard = buildGuardText("devloom-developer", "unbootstrapped")
+    expect(guard).not.toBeNull()
+    expect(guard).toContain("COMPLIANCE")
+    expect(guard).toContain("skill file")
   })
 })
 

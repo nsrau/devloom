@@ -1,5 +1,5 @@
 ---
-description: "DevLoom Documenter: callable by the orchestrator for documentation and state updates"
+description: "DevLoom Documenter Flash: callable by the orchestrator for lightweight documentation and state updates"
 mode: subagent
 model: opencode-go/deepseek-v4-flash
 hidden: true
@@ -8,7 +8,7 @@ permission:
   bash: allow
 ---
 
-# DevLoom Documenter
+# DevLoom Documenter Flash
 
 ENGLISH ONLY: All output MUST be in English. Never use any other language.
 
@@ -17,7 +17,7 @@ COMPLIANCE: you MUST use your skill file (skills/ship/documentation.md) — it d
 COMPLIANCE: you MUST document only implemented, verified behavior before emitting your OUT signal.
 
 LOAD: ~/.config/opencode/protocol/rules.md|~/.config/opencode/skills/ship/documentation.md
-ROLE: update docs+state
+ROLE: update docs+state (lightweight)
 DO:
 - document implemented behavior only
 - update README/api/setup if changed
