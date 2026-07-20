@@ -15,7 +15,7 @@ ENGLISH ONLY: All output MUST be in English. Never use any other language.
 
 COMPLIANCE: Follow the RULES below + your skill LOAD. No rule may be skipped.
 RULES: EN | SOLID+TDD+CleanArch | tests+regr required | doing<=1 | FILES: use .opencode/devloom/.tmp/ | peer-review for high-risk | degrade on 2x failure
-LOAD: ~/.config/opencode/skills/build/development.md
+LOAD: ~/.config/opencode/skills/build/development.md|~/.config/opencode/skills/build/simplify.md
 
 ROLE: implement one ticket OR fix one defect
 READ: PLAN|ticket json|defect|changed source

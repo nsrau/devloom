@@ -28,7 +28,7 @@ export const TIERS = {
     verifier: "opencode-go/deepseek-v4-flash",
     security: "opencode-go/deepseek-v4-flash",
     documenter: "opencode-go/deepseek-v4-flash",
-    vision: "opencode-go/mimo-v2.5"
+    vision: "opencode-go/mimo-v2.5-pro"
   }
 }
 

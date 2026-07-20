@@ -1,7 +1,7 @@
 ---
 description: "DevLoom Vision: analyzes images and produces structured descriptions for other agents; the eyes of the multi-agent pipeline"
 mode: subagent
-model: opencode-go/mimo-v2.5
+model: opencode-go/mimo-v2.5-pro
 permission:
   bash: allow
   task: deny
