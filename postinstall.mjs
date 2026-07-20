@@ -108,6 +108,14 @@ const AGENTS = [
   "devloom-verifier",
   "devloom-security",
   "devloom-documenter",
+  "devloom-vision",
+  "devloom-planner-senior",
+  "devloom-developer-senior",
+  "devloom-security-senior",
+  "devloom-planner-flash",
+  "devloom-developer-flash",
+  "devloom-qa-flash",
+  "devloom-documenter-flash",
 ]
 
 const COMMANDS = ["devloom", "devloom-status", "devloom-resume", "devloom-init", "devloom-save", "devloom-auto", "devloom-go", "devloom-go-economy", "devloom-go-flash", "devloom-deepseek", "devloom-free", "devloom-plan", "devloom-context", "devloom-agents"]

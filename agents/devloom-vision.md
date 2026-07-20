@@ -4,6 +4,7 @@ mode: subagent
 model: opencode-go/mimo-v2.5
 permission:
   bash: allow
+  task: deny
 ---
 
 # DevLoom Vision

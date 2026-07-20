@@ -1,5 +1,5 @@
 import { env } from "node:process"
-import { existsSync } from "node:fs"
+import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import type { Hooks, PluginInput } from "@opencode-ai/plugin"
 import { ensureProjectWorkspace } from "./bootstrap.js"
@@ -36,6 +36,23 @@ function createLifecycleHooks(_ctx: PluginInput): Hooks {
   }
 
   const agentBySession = new Map<string, string>()
+  const sessionsFile = rootDir ? join(rootDir, ".opencode", "devloom", ".sessions.json") : ""
+
+  // Restore persisted session→agent map (survives plugin reloads)
+  if (sessionsFile && existsSync(sessionsFile)) {
+    try {
+      const data = JSON.parse(readFileSync(sessionsFile, "utf8")) as Record<string, string>
+      for (const [sid, agent] of Object.entries(data)) agentBySession.set(sid, agent)
+    } catch { /* ignore corrupt file */ }
+  }
+
+  const persistSessions = () => {
+    if (!sessionsFile) return
+    try {
+      writeFileSync(sessionsFile, JSON.stringify(Object.fromEntries(agentBySession)))
+    } catch { /* best effort */ }
+  }
+
   let partCounter = 0
 
   const log = (message: string, data?: Record<string, unknown>) => {
@@ -57,7 +74,10 @@ function createLifecycleHooks(_ctx: PluginInput): Hooks {
     },
 
     "chat.message": async (input, output) => {
-      if (input.agent) agentBySession.set(input.sessionID, input.agent)
+      if (input.agent) {
+        agentBySession.set(input.sessionID, input.agent)
+        persistSessions()
+      }
       const guard = buildGuardText(input.agent, readStateSummary(rootDir))
       log("Message received", { agent: input.agent, sessionID: input.sessionID, guarded: !!guard })
       if (!guard) return

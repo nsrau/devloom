@@ -6,6 +6,7 @@ hidden: true
 permission:
   edit: allow
   bash: allow
+  task: deny
 ---
 
 # DevLoom Documenter
