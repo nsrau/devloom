@@ -17,6 +17,17 @@ export const ORCHESTRATOR_AGENT = "devloom-orchestrator"
 const WRITE_TOOLS = new Set(["write", "edit", "patch"])
 const DEVLOOM_STATE_DIR = ".opencode/devloom/"
 
+export const DEVLOOM_AGENTS = [
+  { name: "devloom-orchestrator", role: "Strategic coordinator" },
+  { name: "devloom-planner", role: "Requirements, specs, architecture" },
+  { name: "devloom-developer", role: "Implementation, code, fixes" },
+  { name: "devloom-qa", role: "Verification, review, regression" },
+  { name: "devloom-verifier", role: "Runtime checks, routes, a11y, API" },
+  { name: "devloom-security", role: "Security audit, CRUD review" },
+  { name: "devloom-documenter", role: "Documentation, README" },
+  { name: "devloom-vision", role: "Image/screenshot analysis" },
+]
+
 function readJson<T>(path: string, fallback: T): T {
   try {
     return JSON.parse(readFileSync(path, "utf8")) as T
@@ -27,7 +38,7 @@ function readJson<T>(path: string, fallback: T): T {
 
 export function readStateSummary(rootDir: string): string {
   const projectRoot = join(rootDir, ".opencode", "devloom", "project")
-  const state = readJson<{ phase?: string; ticket?: string; next?: string; sessions?: Record<string, string>; degraded?: boolean }>(
+  const state = readJson<{ phase?: string; ticket?: string; next?: string; sessions?: Record<string, string>; degraded?: boolean; loopCounts?: Record<string, number> }>(
     join(projectRoot, "state.json"),
     {}
   )
@@ -44,10 +55,25 @@ export function readStateSummary(rootDir: string): string {
   const sessCount = state.sessions ? Object.keys(state.sessions).length : 0
   const degraded = state.degraded ? " degraded" : ""
   const atlas = existsSync(join(rootDir, ".opencode", "devloom", "context", "atlas.md")) ? " atlas" : ""
-  const parts = [`phase=${state.phase} ticket=${state.ticket || "-"} next=${state.next || "-"} doing=${doing} backlog=${backlog} sessions=${sessCount}${degraded}${atlas} ${wt} ${loopSummary} ${ctx}`]
+  const loopDetect = detectLoopState(state)
+  const parts = [`phase=${state.phase} ticket=${state.ticket || "-"} next=${state.next || "-"} doing=${doing} backlog=${backlog} sessions=${sessCount}${degraded}${atlas} ${wt} ${loopSummary} ${ctx}${loopDetect}`]
   const constrGuard = constraintsSummary(rootDir)
   if (constrGuard) parts.push(constrGuard)
   return parts.join(" ")
+}
+
+function detectLoopState(state: { loopCounts?: Record<string, number>; ticket?: string }): string {
+  if (!state.loopCounts || Object.keys(state.loopCounts).length === 0) return ""
+  const warnings: string[] = []
+  for (const [agent, count] of Object.entries(state.loopCounts)) {
+    if (count >= 3) {
+      warnings.push(`ALERT:${agent}=${count}x(retry limit reached)`)
+    } else if (count >= 2) {
+      warnings.push(`WARN:${agent}=${count}x`)
+    }
+  }
+  if (warnings.length === 0) return ""
+  return ` loop_risk=[${warnings.join(";")}]`
 }
 
 const COMPLIANCE_REQUIREMENTS = [
@@ -66,6 +92,9 @@ export function buildGuardText(agent: string | undefined, stateSummary: string):
     ].join(" ")
   }
   if (agent === ORCHESTRATOR_AGENT) {
+    const loopWarning = stateSummary.includes("loop_risk=")
+      ? " LOOP DETECTED — reduce delegation depth, break task into smaller pieces, or report BLOCKED."
+      : ""
     return [
       "[devloom-guard] Orchestrator protocol, every turn:",
       ...COMPLIANCE_REQUIREMENTS,
@@ -73,6 +102,8 @@ export function buildGuardText(agent: string | undefined, stateSummary: string):
       "1) read board+state 2) resume pending phase first 3) new prompt → triage intent, pick minimal chain (never full pipeline by default)",
       "4) delegate ALL phase work via task() — never write code/diffs yourself, never self-delegate",
       "5) persist board+state after each phase 6) end only with task() issued, BLOCKED+reason, or DEVLOOM_DONE.",
+      "ANTI-LOOP: max 2 retries per agent per ticket. After 2 failures → BLOCKED + report. Never delegate to same agent 3x on same ticket.",
+      "REDIRECT: if sub-agent calls task() instead of completing work → STOP, report BLOCKED, delegation chain detected." + loopWarning,
       `State: ${stateSummary}`,
     ].join(" ")
   }

@@ -98,7 +98,7 @@ describe("profile.mjs", () => {
     const profile = await importProfile()
     const config = profile.cmdSet("go")
     expect(config.models.orchestrator).toBe("opencode-go/deepseek-v4-flash")
-    expect(config.models.planner).toBe("opencode-go/glm-5.2")
+    expect(config.models.planner).toBe("opencode-go/qwen3.7-max")
     expect(config.models.developer).toBe("opencode-go/kimi-k2.7-code")
     expect(config.models.qa).toBe("opencode-go/deepseek-v4-pro")
     expect(config.models.security).toBe("opencode-go/glm-5.2")

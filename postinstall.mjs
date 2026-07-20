@@ -110,7 +110,7 @@ const AGENTS = [
   "devloom-documenter",
 ]
 
-const COMMANDS = ["devloom", "devloom-status", "devloom-resume", "devloom-init", "devloom-save", "devloom-auto", "devloom-go", "devloom-go-economy", "devloom-go-flash", "devloom-deepseek", "devloom-free", "devloom-plan", "devloom-context"]
+const COMMANDS = ["devloom", "devloom-status", "devloom-resume", "devloom-init", "devloom-save", "devloom-auto", "devloom-go", "devloom-go-economy", "devloom-go-flash", "devloom-deepseek", "devloom-free", "devloom-plan", "devloom-context", "devloom-agents"]
 
 const SCRIPTS_DIR = resolve(CONFIG_DIR, "devloom-scripts")
 

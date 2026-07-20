@@ -21,7 +21,7 @@ export const TIERS = {
     vision: "opencode-go/minimax-m3"
   },
   standard: {
-    orchestrator: "opencode-go/minimax-m3",
+    orchestrator: "opencode-go/deepseek-v4-flash",
     planner: "opencode-go/qwen3.7-max",
     developer: "opencode-go/kimi-k2.7-code",
     qa: "opencode-go/deepseek-v4-flash",
@@ -35,7 +35,7 @@ export const TIERS = {
 export const PROFILES = {
   go: {
     orchestrator: "opencode-go/deepseek-v4-flash",
-    planner: "opencode-go/glm-5.2",
+    planner: "opencode-go/qwen3.7-max",
     developer: "opencode-go/kimi-k2.7-code",
     qa: "opencode-go/deepseek-v4-pro",
     verifier: "opencode-go/deepseek-v4-pro",
