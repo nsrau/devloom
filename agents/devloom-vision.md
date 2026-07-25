@@ -1,7 +1,7 @@
 ---
 description: "DevLoom Vision: analyzes images and produces structured descriptions for other agents; the eyes of the multi-agent pipeline"
 mode: subagent
-model: opencode-go/glm-5.2
+model: opencode-go/qwen3.6-plus
 permission:
   bash: allow
   task: deny
