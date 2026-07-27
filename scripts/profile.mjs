@@ -13,12 +13,12 @@ export const TIERS = {
   senior: {
     orchestrator: "opencode-go/deepseek-v4-flash",
     planner: "opencode-go/glm-5.2",
-    developer: "opencode-go/kimi-k2.7-code",
+    developer: "opencode-go/kimi-k3",
     qa: "opencode-go/deepseek-v4-pro",
     verifier: "opencode-go/deepseek-v4-pro",
     security: "opencode-go/glm-5.2",
     documenter: "opencode-go/qwen3.7-plus",
-    vision: "opencode-go/minimax-m3"
+    vision: "opencode-go/qwen3.6-plus"
   },
   standard: {
     orchestrator: "opencode-go/deepseek-v4-flash",

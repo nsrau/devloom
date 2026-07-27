@@ -267,8 +267,9 @@ model, so worktrees never conflict.
 
 | Tier | Classification | Agent Variants | Model |
 |------|---------------|---------------|-------|
-| **senior** | Complex feature, architecture, debugging, security audit | `-senior` suffix (planner, developer, security) | GLM-5.2, Kimi K2.7 Code |
+| **senior** | Complex feature, architecture, debugging, security audit | `-senior` suffix (planner, developer, security) | GLM-5.2, Kimi K3 |
 | **standard** | Everything else (default) | Base agents (no suffix) | deepseek-v4-flash, qwen3.7-max, kimi-k2.7-code |
+| **senior developer** | (when senior tier is selected) | devloom-developer-senior | `kimi-k3` |
 
 ### Per-project override
 

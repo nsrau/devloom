@@ -403,7 +403,7 @@ Each of the 8 agents is assigned a model optimized for its role:
 |---|---|---|---|
 | `orchestrator` | Triage, routing, state, gate | `deepseek-v4-flash` | `deepseek-v4-flash` |
 | `planner` | Requirements + CleanArch plan | `qwen3.7-max` | `glm-5.2` |
-| `developer` | Implementation + root-cause fixes | `kimi-k2.7-code` | `kimi-k2.7-code` |
+| `developer` | Implementation + root-cause fixes | `kimi-k2.7-code` | `kimi-k3` |
 | `qa` | Tests, lint, code review, regression | `v4-flash` | `v4-pro` |
 | `verifier` | Runtime app checks + peer review | `v4-flash` | `v4-pro` |
 | `security` | CRUD/exposure forensic review | `v4-flash` | `glm-5.2` |
@@ -418,7 +418,7 @@ a fixed model in its agent file, so parallel worktrees never conflict.
 
 | Tier | When | Agent Variant | Model |
 |------|------|--------------|-------|
-| **senior** | Complex feature, architecture, security audit, debugging | `-senior` suffix (planner, developer, security) | GLM-5.2, Kimi K2.7 Code |
+| **senior** | Complex feature, architecture, security audit, debugging | `-senior` suffix (planner, developer, security) | GLM-5.2, Kimi K3 |
 | **standard** | Everything else (default) | Base agents (no suffix) | deepseek-v4-flash, qwen3.7-max, kimi-k2.7-code |
 
 ### Prefix requirement
@@ -454,7 +454,7 @@ role-optimized models via the tier system (senior/standard):
 |-------|----------|-------------------|
 | Orchestrator | `deepseek-v4-flash` (fast, reliable routing) | `deepseek-v4-flash` |
 | Planner | `qwen3.7-max` (strong reasoning) | `glm-5.2` (deep analysis) |
-| Developer | `kimi-k2.7-code` (code-specialized) | `kimi-k2.7-code` |
+| Developer | `kimi-k2.7-code` (code-specialized) | `kimi-k3` (newest gen) |
 | QA | `v4-flash` (fast review) | `v4-pro` (thorough verification) |
 | Verifier | `v4-flash` (fast checks) | `v4-pro` (deep inspection) |
 | Security | `v4-flash` (light review) | `glm-5.2` (forensic depth) |

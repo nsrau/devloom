@@ -1,7 +1,7 @@
 ---
 description: "DevLoom Developer Senior: callable by the orchestrator for complex ticket implementation and defect fixes"
 mode: subagent
-model: opencode-go/kimi-k2.7-code
+model: opencode-go/kimi-k3
 hidden: true
 permission:
   edit: allow

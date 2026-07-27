@@ -102,15 +102,11 @@ In practice, GLM 5.2 should be assigned to the orchestrator, planner, and any ag
 
 ### When to Use Kimi K2.7 Code
 
-Kimi K2.7 Code (opencode-go/kimi-k2.7-code) offers the best code generation quality combined with a large context window. It is the successor to Kimi K2.6 with improved code generation, fewer hallucinations, and better adherence to instructions across long contexts. It is ideal for:
+Kimi K2.7 Code (opencode-go/kimi-k2.7-code) offers strong code generation quality with a large context window. Successor to K2.6 with fewer hallucinations and better long-context adherence. Ideal for multi-file changes, refactors, code exploration, deep bug fixes, and backend work that needs to hold many services/schemas in context simultaneously. Primary workhorse for the developer role in the go and go-economy profiles.
 
-- Multi-file implementation changes that span many modules
-- Refactoring across large codebases
-- Code exploration and discovery (the developer/planner roles)
-- Fixing bugs that require broad context to understand the full system
-- Backend and data-intensive work where the context of multiple services, database schemas, and data pipelines must be held simultaneously
+### When to Use Kimi K3 (Senior Developer)
 
-Kimi K2.7 Code is the primary workhorse for the developer role in the go and go-economy profiles.
+Kimi K3 (opencode-go/kimi-k3) is the newest Kimi generation. It is the model assigned to the `senior` tier for the developer role when the orchestrator classifies the prompt as complex (architecture change, large refactor, deep debugging, security-sensitive implementation). It offers stronger code reasoning and longer context than K2.7 Code.
 
 ### When to Use MiniMax M3 (Multimodal)
 
