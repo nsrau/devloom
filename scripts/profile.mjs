@@ -80,7 +80,7 @@ export const FREE_CANDIDATES_BY_ROLE = {
   implementation: ["opencode/mimo-v2.5-free", "opencode/deepseek-v4-flash-free", "opencode/nemotron-3-ultra-free", "opencode/big-pickle", "opencode/north-mini-code-free", "opencode/hy3-free"],
   verification: ["opencode/deepseek-v4-flash-free", "opencode/mimo-v2.5-free", "opencode/nemotron-3-ultra-free", "opencode/big-pickle", "opencode/north-mini-code-free", "opencode/hy3-free"],
   documentation: ["opencode/nemotron-3-ultra-free", "opencode/mimo-v2.5-free", "opencode/big-pickle", "opencode/deepseek-v4-flash-free", "opencode/hy3-free", "opencode/north-mini-code-free"],
-  vision: ["opencode-go/minimax-m3", "opencode-go/glm-5.2", "opencode-go/kimi-k2.7-code"]
+  vision: ["opencode/mimo-v2.5-free", "opencode-go/minimax-m3", "opencode-go/glm-5.2", "opencode-go/kimi-k2.7-code"]
 }
 
 export const FREE_ROLE_MAP = {
