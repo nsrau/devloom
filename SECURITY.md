@@ -50,17 +50,24 @@ To report a security vulnerability:
 DevLoom agents operate autonomously with edit, bash, and webfetch permissions.
 This introduces unique security considerations:
 
+- **Hard delegation**: The orchestrator agent has `edit: deny`, `write: deny`,
+  `patch: deny` at the OpenCode permission level. Code production is only
+  possible via `task()` delegation to sub-agents. Sub-agents have `task: deny`,
+  preventing delegation chains. This is enforced by OpenCode itself, not by the
+  plugin — it survives plugin reloads.
 - **Least privilege**: Each agent's `permission` block should be restricted to
   the minimum required for its role. Verifier agents (route, form, a11y, API)
   do not need write access to production source files.
 - **bash permissions**: Agents with `bash: allow` can execute arbitrary shell
   commands. Never grant bash permission to agents that process untrusted input.
+  The orchestrator uses bash ONLY for state persistence in `.opencode/devloom/`
+  — sub-agents have full bash for implementation.
 - **Destructive commands**: The `bash` tool should not be used to run
   destructive commands (rm -rf, drop table, etc.) without explicit user
   confirmation. OpenCode's permission system can prompt for confirmation.
-- **Recovery agent**: The devloom-recovery agent has bash access to recover
-  from build/test/network failures. It may attempt npm install, file deletion,
-  and process management. Monitor its activity in recovery-log.md.
+- **Defect retry limits**: The orchestrator enforces a max of 3 retry cycles
+  per defect. Beyond that, the ticket is marked blocked and reported — agents
+  are not allowed to loop indefinitely on the same issue.
 
 ## Best Practices
 

@@ -44,20 +44,32 @@ DevLoom — post-install
 
 Installing agents:
   - Agent: devloom-orchestrator
-  - Agent: devloom-planner
-  - Agent: devloom-developer
-  - Agent: devloom-qa
+  - Agent: devloom-planner (+ -senior, -flash)
+  - Agent: devloom-developer (+ -senior, -flash)
+  - Agent: devloom-qa (+ -flash)
   - Agent: devloom-verifier
-  - Agent: devloom-security
-  - Agent: devloom-documenter
+  - Agent: devloom-security (+ -senior)
+  - Agent: devloom-documenter (+ -flash)
   - Agent: devloom-vision
 
-Installing commands:
-  - Command: /devloom
-  - Command: /devloom-status
-  - Command: /devloom-resume
-  - Command: /devloom-init
-  - Command: /devloom-save
+Installing commands (15 total):
+  - /devloom, /devloom-init, /devloom-status, /devloom-resume
+  - /devloom-save, /devloom-agents
+  - /devloom-go, /devloom-go-economy, /devloom-go-flash, /devloom-deepseek
+  - /devloom-free, /devloom-auto
+  - /devloom-plan, /devloom-context, /devloom-loop, /devloom-loop-status
+
+Installing skills (9 total):
+  - plan/{planning, verification-planning}
+  - build/{development, simplify, vision-analysis, live-docs}
+  - verify/{quality-assurance, app-verification}
+  - review/security-review
+  - ship/documentation
+  - meta/skill-discovery
+  - loop/* (10 loop engineering skills)
+
+Installing theme:
+  - DevLoom Night Owl (auto-activated)
 
 DevLoom installed successfully!
 ```
@@ -103,12 +115,18 @@ legacy DevLoom workspace files into the compact canonical format.
 Start OpenCode and open the command palette by typing `/`:
 
 ```
-/devloom          → Weave a full feature from a single prompt
-/devloom-status   → Show current weaving progress
-/devloom-resume   → Resume an interrupted execution
-/devloom-init     → Initialize a project for DevLoom
-/devloom-save     → Persist current state and pause for the next command
-/devloom-loop     → Start/stop/status for loop engineering patterns
+/devloom             → Weave a full feature from a single prompt
+/devloom-status      → Show current weaving progress
+/devloom-resume      → Resume an interrupted execution
+/devloom-init        → Initialize a project for DevLoom
+/devloom-save        → Persist current state and pause for the next command
+/devloom-agents      → List all agents and their current model assignments
+/devloom-go          → Switch to Go premium profile
+/devloom-go-economy  → Switch to Go economy profile
+/devloom-go-flash    → Switch to Go flash profile (cheapest paid)
+/devloom-free        → Switch to free-tier profile
+/devloom-auto        → Auto-detect best profile for your environment
+/devloom-loop        → Start/stop loop engineering patterns
 ```
 
 Or check installed files directly:
@@ -117,14 +135,15 @@ Or check installed files directly:
 # Linux / macOS
 ls ~/.config/opencode/agents/ | grep devloom
 
-# Expected:
-devloom-developer.md
-devloom-documenter.md
+# Expected (15 agents):
 devloom-orchestrator.md
-devloom-planner.md
-devloom-qa.md
-devloom-security.md
+devloom-planner.md          devloom-planner-senior.md      devloom-planner-flash.md
+devloom-developer.md        devloom-developer-senior.md    devloom-developer-flash.md
+devloom-qa.md               devloom-qa-flash.md
 devloom-verifier.md
+devloom-security.md         devloom-security-senior.md
+devloom-documenter.md       devloom-documenter-flash.md
+devloom-vision.md
 ```
 
 All installed `devloom-*` subagents are callable by `devloom-orchestrator`
@@ -161,13 +180,13 @@ The profile determines which model is assigned to each of the 8 agent roles. Pre
 {
   "models": {
     "orchestrator": "opencode-go/deepseek-v4-flash",
-    "planner": "opencode-go/glm-5.2",
+    "planner": "opencode-go/qwen3.7-max",
     "developer": "opencode-go/kimi-k2.7-code",
     "qa": "opencode-go/deepseek-v4-pro",
     "verifier": "opencode-go/deepseek-v4-pro",
     "security": "opencode-go/glm-5.2",
     "documenter": "opencode-go/qwen3.7-plus",
-    "vision": "opencode-go/minimax-m3"
+    "vision": "opencode-go/qwen3.6-plus"
   }
 }
 ```
@@ -184,7 +203,7 @@ The profile determines which model is assigned to each of the 8 agent roles. Pre
     "verifier": "opencode-go/deepseek-v4-flash",
     "security": "opencode-go/deepseek-v4-pro",
     "documenter": "opencode-go/qwen3.7-plus",
-    "vision": "opencode-go/minimax-m3"
+    "vision": "opencode-go/qwen3.6-plus"
   }
 }
 ```
@@ -201,7 +220,7 @@ The profile determines which model is assigned to each of the 8 agent roles. Pre
     "verifier": "opencode-go/deepseek-v4-flash",
     "security": "opencode-go/deepseek-v4-flash",
     "documenter": "opencode-go/deepseek-v4-flash",
-    "vision": "opencode-go/minimax-m3"
+    "vision": "opencode-go/qwen3.6-plus"
   }
 }
 ```
@@ -218,7 +237,7 @@ The profile determines which model is assigned to each of the 8 agent roles. Pre
     "verifier": "opencode-go/deepseek-v4-flash",
     "security": "opencode-go/deepseek-v4-pro",
     "documenter": "opencode-go/deepseek-v4-flash",
-    "vision": "opencode-go/minimax-m3"
+    "vision": "opencode-go/qwen3.6-plus"
   }
 }
 ```
@@ -235,7 +254,7 @@ The profile determines which model is assigned to each of the 8 agent roles. Pre
     "verifier": "opencode/nemotron-3-ultra-free",
     "security": "opencode/nemotron-3-ultra-free",
     "documenter": "opencode/nemotron-3-ultra-free",
-    "vision": "opencode-go/minimax-m3"
+    "vision": "opencode-go/qwen3.6-plus"
   }
 }
 ```
@@ -249,7 +268,7 @@ model, so worktrees never conflict.
 | Tier | Classification | Agent Variants | Model |
 |------|---------------|---------------|-------|
 | **senior** | Complex feature, architecture, debugging, security audit | `-senior` suffix (planner, developer, security) | GLM-5.2, Kimi K2.7 Code |
-| **standard** | Everything else (default) | Base agents (no suffix) | minimax-m3, qwen3.7-max, kimi-k2.7-code |
+| **standard** | Everything else (default) | Base agents (no suffix) | deepseek-v4-flash, qwen3.7-max, kimi-k2.7-code |
 
 ### Per-project override
 
@@ -581,14 +600,23 @@ Skills are stored in `~/.config/opencode/skills/` following the
 
 ```
 skills/
-├── meta/       skill-discovery   (orchestrator)
-├── plan/       planning          (planner)
-├── build/      development       (developer)
-├── verify/     quality-assurance (qa)
-│               app-verification  (verifier)
-├── review/     security-review   (security)
-└── ship/       documentation     (documenter)
+├── meta/       skill-discovery           (orchestrator)
+├── plan/       planning                  (planner)
+│               verification-planning     (planner — evidence path)
+├── build/      development               (developer)
+│               simplify                  (developer, qa)
+│               vision-analysis           (vision)
+│               live-docs                 (developer)
+├── verify/     quality-assurance         (qa)
+│               app-verification          (verifier)
+├── review/     security-review           (security)
+├── ship/       documentation             (documenter)
+└── loop/       10 loop engineering skills (daily-triage, pr-babysitter, ...)
 ```
+
+Agents may load multiple skills via pipe-separated `LOAD:` directives. For example,
+planner loads both `planning` and `verification-planning`; developer and qa both
+load `development`/or `quality-assurance` plus `simplify`.
 
 ---
 
@@ -698,6 +726,12 @@ The agent `permission` blocks in `~/.config/opencode/agents/devloom-*.md` define
 what each agent can do (edit files, run shell commands, fetch URLs, etc.).
 Review these permissions and restrict them if needed.
 
+**Hard delegation guarantees** — the orchestrator agent's `permission` block
+sets `edit: deny`, `write: deny`, `patch: deny` at the OpenCode level. The model
+cannot bypass this; the only way to produce code is via `task()` delegation to
+sub-agents. Sub-agents have `task: deny`, preventing delegation chains. This is
+enforced by OpenCode itself, not by the plugin — it survives plugin reloads.
+
 ### Prompt Sanitization
 
 User prompts are truncated to 4000 characters and control characters are stripped
@@ -731,40 +765,48 @@ See [SECURITY.md](SECURITY.md) for our responsible disclosure policy.
 devloom/
 ├── src/
 │   ├── index.ts                   # Plugin entry point (exports DevLoomPlugin)
-│   └── plugin.ts                  # Lifecycle hooks: event, tool.execute.before/after
-├── agents/                         # 7 agents — 1 router + 6 specialists
-│   ├── devloom-orchestrator.md    # primary — triage, route, state, gate
-│   ├── devloom-planner.md         # subagent — requirements + CleanArch plan
-│   ├── devloom-developer.md       # subagent — implement / root-cause fix (TDD, SOLID)
-│   ├── devloom-qa.md              # subagent — tests, lint, code review, regression
-│   ├── devloom-verifier.md        # subagent — runtime app checks by scope
-│   ├── devloom-security.md        # subagent — CRUD + exposure security review
-│   └── devloom-documenter.md      # subagent — docs + state update
-├── commands/
-│   ├── devloom.md             # /devloom <prompt>
-│   ├── devloom-init.md        # /devloom-init
-│   ├── devloom-resume.md      # /devloom-resume
-│   └── devloom-status.md      # /devloom-status
-├── skills/                        # 7 skill files — one per agent
+│   ├── plugin.ts                  # Lifecycle hooks: event, chat.message, tool.execute.before/after
+│   ├── guard.ts                   # Compliance guard, loop detection, state summary
+│   ├── bootstrap.ts               # Project workspace bootstrap
+│   ├── context.ts                 # Architecture atlas generation
+│   ├── loop.ts                    # Loop engineering state
+│   ├── worktree.ts                # Worktree management
+│   └── constraints.ts             # Loop constraints
+├── agents/                         # 15 agents — 1 router + 7 specialists × tier variants
+│   ├── devloom-orchestrator.md    # primary — triage, route, state, gate (edit/write/patch: deny)
+│   ├── devloom-planner.md / -senior / -flash
+│   ├── devloom-developer.md / -senior / -flash
+│   ├── devloom-qa.md / -flash
+│   ├── devloom-verifier.md
+│   ├── devloom-security.md / -senior
+│   ├── devloom-documenter.md / -flash
+│   └── devloom-vision.md
+├── commands/                       # 16 command files
+│   ├── devloom.md, devloom-init.md, devloom-resume.md, devloom-status.md
+│   ├── devloom-save.md, devloom-agents.md
+│   ├── devloom-go.md, devloom-go-economy.md, devloom-go-flash.md
+│   ├── devloom-deepseek.md, devloom-free.md, devloom-auto.md
+│   ├── devloom-plan.md, devloom-context.md
+│   └── devloom-loop.md, devloom-loop-status.md
+├── skills/                        # 9 skill files + 10 loop skills
 │   ├── meta/       skill-discovery
-│   ├── plan/       planning            (planner)
-│   ├── build/      development         (developer)
-│   ├── verify/     quality-assurance   (qa)
-│   │               app-verification    (verifier)
-│   ├── review/     security-review     (security)
-│   └── ship/       documentation       (documenter)
-├── __tests__/                    # Unit tests (Jest)
-│   ├── index.test.ts             # Plugin smoke test
-│   ├── plugin.test.ts            # Lifecycle hook tests
-│   └── postinstall.test.ts       # Post-install security + path tests
-├── postinstall.mjs               # Copies agents + commands + skills to config dir
-├── SECURITY.md                   # Security policy and disclosure
-├── jest.config.mjs               # Jest test configuration
+│   ├── plan/       planning, verification-planning
+│   ├── build/      development, simplify, vision-analysis, live-docs
+│   ├── verify/     quality-assurance, app-verification
+│   ├── review/     security-review (full audit playbook)
+│   ├── ship/       documentation
+│   └── loop/       10 loop engineering skills
+├── protocol/                       # Shared protocols (orchestrator-core, agent-contracts, ...)
+├── .opencode/themes/               # DevLoom Night Owl theme
+├── __tests__/                      # 228 unit tests (Jest)
+├── postinstall.mjs                 # Installs 15 agents, 16 commands, 9 skills, theme
+├── SECURITY.md                     # Security policy and disclosure
+├── jest.config.mjs                 # Jest test configuration
 ├── package.json
 ├── tsconfig.json
 ├── README.md
-├── GUIDE.md                      # This file
-└── .github/workflows/ci.yml      # CI pipeline (Node 18, 20, 22)
+├── GUIDE.md                        # This file
+└── .github/workflows/ci.yml        # CI pipeline (Node 18, 20, 22)
 ```
 
 ---

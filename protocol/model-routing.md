@@ -2,42 +2,36 @@
 
 ## Overview
 
-Model routing is the mechanism by which DevLoom assigns a specific language model to each agent role within a delivery pipeline. Different models offer different trade-offs between reasoning quality, context window size, cost, and speed. Routing profiles define these assignments declaratively, allowing users to select the right balance for their budget and quality requirements without modifying agent logic.
+Model routing assigns a specific language model to each agent role. Different models offer different trade-offs between reasoning quality, context, cost, and speed. Profiles let users pick the right balance without changing agent logic.
 
-Each of the 7 DevLoom agents (orchestrator, planner, developer, qa, verifier, security, documenter) receives a model assignment from the active profile. The orchestrator applies these assignments when dispatching tasks to sub-agents.
+Each of the 8 DevLoom agents (orchestrator, planner, developer, qa, verifier, security, documenter, vision) receives a model from the active profile. The orchestrator applies these when dispatching tasks.
 
 ## How Profile Selection Works
 
-1. The orchestrator reads the active profile from `.opencode/devloom/project/config.json` under the `modelRouting` key.
-2. If no profile is specified, `go-flash` is used as the default (cheapest Go model, deepseek-v4-flash for every agent).
-3. Each agent task dispatched by the orchestrator includes the assigned model ID from the profile.
-4. The sub-agent executes using that model.
-5. Profiles can be overridden per-task via the `--model` flag or by setting the `OPENCODE_MODEL_OVERRIDE` environment variable.
-
-Example config.json entry:
+1. Profile is read from `.opencode/devloom/project/config.json` under `modelRouting`.
+2. Default: `go-flash` (deepseek-v4-flash for every role except vision).
+3. Override per task via `--model` flag or `OPENCODE_MODEL_OVERRIDE` env var.
 
 ```json
-{
-  "modelRouting": "go"
-}
+{ "modelRouting": "go" }
 ```
 
 ## Profiles
 
 ### go (max quality)
 
-The highest quality profile for production work. Orchestrator uses DeepSeek V4 Flash (cheapest — runs every turn; vision delegated to `devloom-vision`). DeepSeek V4 Pro to planner, Kimi K2.7 Code to implementation, GLM 5.2 to security and vision analysis, DeepSeek V4 Pro to other verification roles, and Qwen 3.7 Plus to documentation.
+The highest quality profile for production work. Orchestrator uses DeepSeek V4 Flash (cheapest — runs every turn; vision delegated to `devloom-vision`). Qwen 3.7 Max to planner (strong reasoning), Kimi K2.7 Code to implementation, GLM 5.2 to security (forensic depth), DeepSeek V4 Pro to QA/verifier, Qwen 3.7 Plus to documentation, Qwen 3.6 Plus to vision (low-cost multimodal).
 
 | Role | Model |
 |---|---|
 | orchestrator | opencode-go/deepseek-v4-flash |
-| planner | opencode-go/deepseek-v4-pro |
+| planner | opencode-go/qwen3.7-max |
 | developer | opencode-go/kimi-k2.7-code |
 | qa | opencode-go/deepseek-v4-pro |
 | verifier | opencode-go/deepseek-v4-pro |
 | security | opencode-go/glm-5.2 |
 | documenter | opencode-go/qwen3.7-plus |
-| vision | opencode-go/glm-5.2 |
+| vision | opencode-go/qwen3.6-plus |
 
 ### go-economy
 
@@ -52,6 +46,37 @@ A lower cost profile that retains Kimi K2.7 Code for the developer role and uses
 | verifier | opencode-go/deepseek-v4-pro |
 | security | opencode-go/deepseek-v4-pro |
 | documenter | opencode-go/qwen3.6-plus |
+| vision | opencode-go/qwen3.6-plus |
+
+### go-flash
+
+All agents on DeepSeek V4 Flash for maximum throughput at minimum cost. Vision uses Qwen 3.6 Plus (multimodal).
+
+| Role | Model |
+|---|---|
+| orchestrator | opencode-go/deepseek-v4-flash |
+| planner | opencode-go/deepseek-v4-flash |
+| developer | opencode-go/deepseek-v4-flash |
+| qa | opencode-go/deepseek-v4-flash |
+| verifier | opencode-go/deepseek-v4-flash |
+| security | opencode-go/deepseek-v4-flash |
+| documenter | opencode-go/deepseek-v4-flash |
+| vision | opencode-go/qwen3.6-plus |
+
+### deepseek
+
+All DeepSeek V4 Pro agents (consistent provider affinity). Vision uses Qwen 3.6 Plus (multimodal).
+
+| Role | Model |
+|---|---|
+| orchestrator | opencode-go/deepseek-v4-pro |
+| planner | opencode-go/deepseek-v4-pro |
+| developer | opencode-go/deepseek-v4-pro |
+| qa | opencode-go/deepseek-v4-pro |
+| verifier | opencode-go/deepseek-v4-pro |
+| security | opencode-go/deepseek-v4-pro |
+| documenter | opencode-go/deepseek-v4-pro |
+| vision | opencode-go/qwen3.6-plus |
 
 ### free
 
@@ -89,38 +114,21 @@ Kimi K2.7 Code is the primary workhorse for the developer role in the go and go-
 
 ### When to Use MiniMax M3 (Multimodal)
 
-MiniMax M3 (opencode-go/minimax-m3) is multimodal but no longer the default orchestrator. It is the fallback for the `vision` role when GLM 5.2 is unavailable, and the secondary candidate in the `go-flash` and free profiles. Use it directly only when you need a multimodal model with no vision delegation overhead.
+MiniMax M3 (opencode-go/minimax-m3) is multimodal but is not the default in any current profile. The `devloom-vision` agent uses Qwen 3.6 Plus (multimodal, lower cost). MiniMax M3 may still be used as a vision fallback if Qwen 3.6 Plus is unavailable. Use it directly only when you need a multimodal model with no vision delegation overhead.
 
 ### When to Use DeepSeek V4 Pro
 
-DeepSeek V4 Pro (opencode-go/deepseek-v4-pro) excels at structured, analytical tasks with clear right/wrong answers. It is the best choice for:
+DeepSeek V4 Pro (opencode-go/deepseek-v4-pro) excels at structured, analytical tasks. It is the default qa and verifier in the go profile, and the default for most roles in `deepseek` and `go-economy`, because these roles benefit from precision over open-ended reasoning.
 
-- Multi-file implementation changes that span many modules
-- Refactoring across large codebases
-- Code exploration and discovery (the developer/planner roles)
-- Fixing bugs that require broad context to understand the full system
-- Backend and data-intensive work where the context of multiple services, database schemas, and data pipelines must be held simultaneously
-
-Kimi K2.7 Code is the primary workhorse for the developer role in the go and go-economy profiles. When K2.7 Code is unavailable, the profile manager falls back to the best available model automatically.
-
-### When to Use DeepSeek V4 Pro
-
-DeepSeek V4 Pro (opencode-go/deepseek-v4-pro) excels at structured, analytical tasks with clear right/wrong answers. It is the default planner, qa, and verifier in the go profile because these roles benefit from precision over open-ended reasoning.
-
-Best uses:
-- Planning and architectural decomposition
-- Verification and validation (routes, forms, APIs, accessibility)
-- Writing and running tests
-- Debugging and root cause analysis
-- Regression testing and quality assurance reviews
+Best uses: planning, verification, writing/running tests, debugging, root-cause analysis, regression reviews.
 
 ### When to Use DeepSeek V4 Flash
 
-DeepSeek V4 Flash (opencode-go/deepseek-v4-flash) is the cheapest Go model. It is the default orchestrator in the go and go-economy profiles because the orchestrator runs every turn and accumulates the highest token volume. Vision analysis is delegated to `devloom-vision` (GLM 5.2), so the orchestrator does not need multimodal capability. It is also the default for every role in the `go-flash` profile.
+DeepSeek V4 Flash (opencode-go/deepseek-v4-flash) is the cheapest Go model. It is the default orchestrator in the go and go-economy profiles because the orchestrator runs every turn and accumulates the highest token volume. Vision is delegated to `devloom-vision` (Qwen 3.6 Plus), so the orchestrator does not need multimodal capability. It is also the default for every role in the `go-flash` profile.
 
 ### When to Use Qwen Models
 
-Qwen 3.7 Plus (opencode-go/qwen3.7-plus) is the latest Qwen model. Qwen 3.6 Plus (opencode-go/qwen3.6-plus) provides good quality at lower cost. Both suit documentation, analysis, and code summarization.
+Qwen 3.7 Plus (opencode-go/qwen3.7-plus) is the latest Qwen model — documentation, analysis, code summarization. Qwen 3.7 Max (opencode-go/qwen3.7-max) is the planner in the `go` profile for strong reasoning. Qwen 3.6 Plus (opencode-go/qwen3.6-plus) is the default multimodal model for the `devloom-vision` agent — lowest-cost multimodal option on the OpenCode Go plan.
 
 ### When to Use Free Tier Models
 
