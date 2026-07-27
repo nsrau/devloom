@@ -13,14 +13,17 @@ into verified, documented, production-ready software — not just generated code
 
 ## Highlights
 
-- **8 agents, zero redundant LOADs** — Orchestrator routes; Planner, Developer, QA, Verifier, Security, Documenter, Vision execute. Rules inlined in agent files, no protocol file LOADs.
+- **15 agents, hard-delegation enforced** — Orchestrator routes; Planner, Developer, QA, Verifier, Security, Documenter, Vision execute. Orchestrator has `edit/write/patch: deny` at the OpenCode permission level — code production is IMPOSSIBLE without `task()` delegation. Sub-agents have `task: deny` to prevent delegation chains.
 - **Complexity-based tiering** — Classifies prompts as senior/standard, calls variant agents by name. No global state.
 - **Protocol compliance** — Inline RULES + guard injection per turn. Never skippable.
 - **Pipeline continuity** — Sessions tracked via `state.sessions`, task_id reused across turns.
+- **Loop detection** — Tracks retry counts per agent per ticket. Warns at 2+ retries, blocks at 3+. Detects delegation chains and phase stalls.
 - **Peer review gate** — Multi-model consensus for high-risk changes.
 - **Architecture atlas** — Auto-generated codebase map on plugin init.
 - **Queue-over-preempt** — New prompts queue behind active work.
 - **Tier degradation** — Auto-fallback on model failure: senior→standard→skip.
+- **Agent listing** — `/devloom-agents` shows all agents and their current model assignments.
+- **Background dispatch** — Independent lanes run via `task(..., background: true)` for parallel work.
 
 ## How It Works
 
@@ -50,16 +53,16 @@ into verified, documented, production-ready software — not just generated code
 
 | Agent | Role | Skill |
 |-------|------|-------|
-| Orchestrator | Triage, route, state, gate | — |
-| Planner | Requirements + CleanArch plan | `plan/planning` |
-| Developer | Implement / fix | `build/development` |
-| QA | Tests, lint, review, regression | `verify/quality-assurance` |
+| Orchestrator | Triage, route, state, gate (hard-denied write/edit/patch) | — |
+| Planner | Requirements + CleanArch plan + evidence path | `plan/planning` + `plan/verification-planning` |
+| Developer | Implement / fix + simplify | `build/development` + `build/simplify` |
+| QA | Tests, lint, review, regression + simplify | `verify/quality-assurance` + `build/simplify` |
 | Verifier | Runtime checks by scope + peer review | `verify/app-verification` |
 | Security | CRUD/exposure forensic review | `review/security-review` |
 | Documenter | Docs + state updates | `ship/documentation` |
 | Vision | Image/screenshot analysis | `build/vision-analysis` |
 
-Each agent has variant files: `-senior` (strongest models) or base (standard tier). Protocol rules are inlined in every agent — no external LOAD needed beyond a single skill file.
+Each agent has variant files: `-senior` (strongest models) or `-flash` (cheapest), plus base (standard tier). Protocol rules are inlined in every agent — no external LOAD needed beyond the skill files.
 
 ---
 
@@ -117,19 +120,25 @@ root. OpenCode loads it automatically when you open the devloom directory.
 
 ### Drift protection (always-on)
 
-Long sessions make models "forget" prompt-only rules. The plugin enforces the
-DevLoom flow deterministically, every turn — no reminders needed:
+Long sessions make models "forget" prompt-only rules. DevLoom enforces the
+flow deterministically at three levels — no reminders needed:
 
-- **Per-message guard** (`chat.message` + system transform): injects compliance
-  requirements + protocol rules + live pipeline state into ALL devloom agents
-  (orchestrator and sub-agents) every turn.
-- **Hard delegation guard** (`tool.execute.before`): if the orchestrator tries to
-  `write`/`edit`/`patch` any file outside `.opencode/devloom/`, the call is
-  blocked with an error telling it to delegate via `task()`. State persistence
-  stays allowed.
-- **Compaction guard** (`experimental.session.compacting`): the compaction
-  summary is forced to preserve the routing rule and current pipeline state, so
-  the flow survives context compression.
+- **Level 1: OpenCode permissions (hardest)** — The orchestrator's `edit`/`write`/`patch` are denied at the OpenCode permission level. Calls fail with permission errors — the model has no way to bypass this. Sub-agents have `task: deny` so they cannot create delegation chains.
+- **Level 2: Plugin guard** (`tool.execute.before`): if the orchestrator somehow attempts a write outside `.opencode/devloom/`, the plugin blocks it with an error telling it to delegate via `task()`. State persistence stays allowed.
+- **Level 3: Per-turn injection** (`chat.message` + system transform): compliance requirements + protocol rules + live pipeline state injected into ALL devloom agents every turn.
+- **Compaction guard** (`experimental.session.compacting`): the compaction summary is forced to preserve the routing rule and current pipeline state, so the flow survives context compression.
+- **Session persistence**: session→agent mapping is written to `.opencode/devloom/.sessions.json` so the guard survives plugin reloads (e.g. after `opencode --continue`).
+
+### Anti-loop protection
+
+Agents that get stuck waste tokens. DevLoom tracks retry counts and stops runaway chains:
+
+- **Per-agent retry counter** — `state.loopCounts[agentName]` tracks how many times the orchestrator re-delegated to the same agent for the current ticket.
+- **WARN at 2 retries** — injected into the orchestrator's state summary as `loop_risk=[WARN:devloom-developer=2x]`.
+- **HARD STOP at 3 retries** — orchestrator prompt enforces: mark ticket blocked, report BLOCKED, never attempt a 4th retry.
+- **Phase stall detection** — if the same phase is re-entered 3+ times with no state advancement, report BLOCKED and ask for task decomposition.
+- **Delegation chain detection** — if a sub-agent responds by calling `task()` instead of completing its work, STOP. Sub-agents have `task: deny` at the permission level as a hard guarantee.
+- **Cost circuit breaker** — if a single ticket exceeds 2M tokens, pause and report.
 
 ---
 
@@ -143,6 +152,12 @@ Check progress mid-run:
 
 ```
 /devloom-status
+```
+
+List all agents and their current models:
+
+```
+/devloom-agents
 ```
 
 Persist current state and pause for the next user command:
@@ -306,14 +321,14 @@ Uses the strongest OpenCode Go models per role.
 ```json
 {
   "models": {
-    "orchestrator": "opencode-go/minimax-m3",
-    "planner": "opencode-go/glm-5.2",
+    "orchestrator": "opencode-go/deepseek-v4-flash",
+    "planner": "opencode-go/qwen3.7-max",
     "developer": "opencode-go/kimi-k2.7-code",
     "qa": "opencode-go/deepseek-v4-pro",
     "verifier": "opencode-go/deepseek-v4-pro",
     "security": "opencode-go/glm-5.2",
     "documenter": "opencode-go/qwen3.7-plus",
-    "vision": "opencode-go/minimax-m3"
+    "vision": "opencode-go/qwen3.6-plus"
   }
 }
 ```
@@ -330,7 +345,7 @@ Uses the strongest OpenCode Go models per role.
     "verifier": "opencode-go/deepseek-v4-flash",
     "security": "opencode-go/deepseek-v4-pro",
     "documenter": "opencode-go/qwen3.7-plus",
-    "vision": "opencode-go/minimax-m3"
+    "vision": "opencode-go/qwen3.6-plus"
   }
 }
 ```
@@ -349,7 +364,7 @@ Uses only DeepSeek models for consistent provider affinity:
     "verifier": "opencode-go/deepseek-v4-flash",
     "security": "opencode-go/deepseek-v4-pro",
     "documenter": "opencode-go/deepseek-v4-flash",
-    "vision": "opencode-go/minimax-m3"
+    "vision": "opencode-go/qwen3.6-plus"
   }
 }
 ```
@@ -368,7 +383,7 @@ All agents on DeepSeek V4 Flash for maximum throughput at minimum cost:
     "verifier": "opencode-go/deepseek-v4-flash",
     "security": "opencode-go/deepseek-v4-flash",
     "documenter": "opencode-go/deepseek-v4-flash",
-    "vision": "opencode-go/minimax-m3"
+    "vision": "opencode-go/qwen3.6-plus"
   }
 }
 ```
@@ -385,15 +400,15 @@ deepseek-v4-flash-free → north-mini-code-free → hy3-free.
 Each of the 8 agents is assigned a model optimized for its role:
 
 | Agent | Role | Standard Tier | Senior Tier |
-|---|---|---|---|---|
-| `orchestrator` | Triage, routing, state, gate | `minimax-m3` | `minimax-m3` |
+|---|---|---|---|
+| `orchestrator` | Triage, routing, state, gate | `deepseek-v4-flash` | `deepseek-v4-flash` |
 | `planner` | Requirements + CleanArch plan | `qwen3.7-max` | `glm-5.2` |
 | `developer` | Implementation + root-cause fixes | `kimi-k2.7-code` | `kimi-k2.7-code` |
 | `qa` | Tests, lint, code review, regression | `v4-flash` | `v4-pro` |
 | `verifier` | Runtime app checks + peer review | `v4-flash` | `v4-pro` |
 | `security` | CRUD/exposure forensic review | `v4-flash` | `glm-5.2` |
 | `documenter` | Docs + state updates | `v4-flash` | `qwen3.7-plus` |
-| `vision` | Image analysis | `mimo-v2.5` | `minimax-m3` |
+| `vision` | Image analysis (multimodal) | `qwen3.6-plus` | `qwen3.6-plus` |
 
 ### Tier system (complexity-based agent selection)
 
@@ -404,7 +419,7 @@ a fixed model in its agent file, so parallel worktrees never conflict.
 | Tier | When | Agent Variant | Model |
 |------|------|--------------|-------|
 | **senior** | Complex feature, architecture, security audit, debugging | `-senior` suffix (planner, developer, security) | GLM-5.2, Kimi K2.7 Code |
-| **standard** | Everything else (default) | Base agents (no suffix) | minimax-m3, qwen3.7-max, kimi-k2.7-code |
+| **standard** | Everything else (default) | Base agents (no suffix) | deepseek-v4-flash, qwen3.7-max, kimi-k2.7-code |
 
 ### Prefix requirement
 
@@ -437,14 +452,14 @@ role-optimized models via the tier system (senior/standard):
 
 | Agent | Standard | Senior (complex) |
 |-------|----------|-------------------|
-| Orchestrator | `minimax-m3` (multimodal, fast) | `minimax-m3` |
+| Orchestrator | `deepseek-v4-flash` (fast, reliable routing) | `deepseek-v4-flash` |
 | Planner | `qwen3.7-max` (strong reasoning) | `glm-5.2` (deep analysis) |
 | Developer | `kimi-k2.7-code` (code-specialized) | `kimi-k2.7-code` |
 | QA | `v4-flash` (fast review) | `v4-pro` (thorough verification) |
 | Verifier | `v4-flash` (fast checks) | `v4-pro` (deep inspection) |
 | Security | `v4-flash` (light review) | `glm-5.2` (forensic depth) |
 | Documenter | `v4-flash` (fast docs) | `qwen3.7-plus` (quality docs) |
-| Vision | `mimo-v2.5` (efficient vision) | `minimax-m3` (best vision) |
+| Vision | `qwen3.6-plus` (low-cost multimodal) | `qwen3.6-plus` |
 
 ### Token architecture
 
@@ -466,15 +481,18 @@ Run `opencode models` to see what's currently available in your environment.
 
 ## Skills
 
-DevLoom ships one focused skill per agent (plus a meta discovery skill). Each skill folds in the relevant engineering standards — SOLID, clean code, clean architecture, TDD, UI/UX (WCAG-AA), and forensic root-cause discipline (no workarounds):
+DevLoom ships focused skills per agent. Each skill folds in the relevant engineering standards — SOLID, clean code, clean architecture, TDD, UI/UX (WCAG-AA), and forensic root-cause discipline (no workarounds):
 
 | Category | Skill | Agent |
 |----------|-------|-------|
 | `plan/` | planning | planner |
+| `plan/` | verification-planning | planner (evidence path before non-trivial changes) |
 | `build/` | development | developer |
+| `build/` | simplify | developer, qa (behavior-preserving simplification) |
+| `build/` | vision-analysis | vision |
 | `verify/` | quality-assurance | qa |
 | `verify/` | app-verification | verifier |
-| `review/` | security-review | security |
+| `review/` | security-review | security (CRUD/exposure/auth audit) |
 | `ship/` | documentation | documenter |
 | `meta/` | skill-discovery | orchestrator |
 
@@ -508,12 +526,19 @@ devloom/
 |   +-- devloom-security.md / -senior
 |   +-- devloom-documenter.md / -flash
 |   +-- devloom-vision.md
-+-- commands/                     # 15 command files
-+-- skills/                       # 7 skill files + 10 loop skills
++-- commands/                     # 16 command files + profile.mjs
++-- skills/                       # 9 skill files + 10 loop skills
+|   +-- plan/         planning, verification-planning
+|   +-- build/        development, simplify, vision-analysis
+|   +-- verify/       quality-assurance, app-verification
+|   +-- review/       security-review
+|   +-- ship/         documentation
+|   +-- meta/         skill-discovery
+|   +-- loop/         10 loop engineering skills
 +-- protocol/                     # Shared protocols + rules.md
 +-- .opencode/themes/             # DevLoom Night Owl theme
 +-- __tests__/                    # 228 Jest tests
-+-- postinstall.mjs               # Auto-installs agents, protocols, theme
++-- postinstall.mjs               # Auto-installs 15 agents, 14 commands, 9 skills, theme
 ```
 ---
 
