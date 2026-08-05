@@ -2,7 +2,6 @@
 description: "DevLoom Planner: callable by the orchestrator for requirements and architecture planning"
 mode: subagent
 model: opencode-go/qwen3.7-max
-hidden: true
 permission:
   edit: allow
   bash: allow

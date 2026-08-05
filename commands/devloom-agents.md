@@ -10,7 +10,7 @@ subtask: false
 List all DevLoom agents, their roles, and current model assignments.
 
 ```bash
-PROFILE_MJS="$(dirname "$(readlink -f "$0")")/profile.mjs"
+PROFILE_MJS="$(node -e 'const fs=require("fs"),p=require("path");console.log(p.join(p.dirname(fs.realpathSync(process.argv[1])),"profile.mjs"))' "$0" 2>/dev/null)"
 [ -f "$PROFILE_MJS" ] || PROFILE_MJS="$HOME/.config/opencode/devloom-scripts/profile.mjs"
 [ -f "$PROFILE_MJS" ] || PROFILE_MJS="$HOME/.config/opencode/commands/profile.mjs"
 [ -f "$PROFILE_MJS" ] || { echo "profile.mjs not found - reinstall DevLoom"; exit 1; }
@@ -41,3 +41,5 @@ node "$PROFILE_MJS" current 2>&1
 - `@devloom-vision` — attach image for analysis
 
 Switch profiles: `/devloom-go`, `/devloom-go-economy`, `/devloom-free`
+
+After switching profiles, restart opencode (or continue with `opencode --continue`) to see the updated profile and agents in the sidebar. If the sidebar does not reflect the current DevLoom code, run `/devloom-refresh`.

@@ -219,20 +219,31 @@ describe("Profile command files", () => {
     }
   })
 
-  test("devloom-go uses premium model in frontmatter", () => {
+  test("devloom-go switches to the go profile via profile.mjs", () => {
     const content = read("commands/devloom-go.md")
-    expect(content).toContain("opencode-go/deepseek-v4-flash")
+    expect(content).toContain("profile.mjs")
+    expect(content).toContain("set go")
   })
 
-  test("devloom-free uses free model in frontmatter", () => {
+  test("devloom-free switches to the free profile via profile.mjs", () => {
     const content = read("commands/devloom-free.md")
-    expect(content).toContain("opencode/")
+    expect(content).toContain("profile.mjs")
+    expect(content).toContain("set free")
     expect(content).toContain("free")
   })
 
   test("devloom-auto does not hardcode a profile", () => {
     const auto = read("commands/devloom-auto.md")
     expect(auto).toContain("auto")
+    expect(auto).toContain("set auto")
+  })
+
+  test("profile commands use deterministic shell injection (no agent delegation)", () => {
+    for (const name of PROFILE_COMMANDS) {
+      const content = read(`commands/${name}.md`)
+      expect(content).not.toMatch(/^agent:/m)
+      expect(content).not.toMatch(/```bash/)
+    }
   })
 })
 
@@ -291,7 +302,7 @@ describe("Profile detection and fallback behavior", () => {
     // Count all FREE_ROLE_MAP entries
     const roleLines = pm.split("\n").filter(l => l.includes("FREE_ROLE_MAP")).length
     expect(roleLines).toBeGreaterThan(0)
-    const freeRoles = pm.match(/[a-z-]+: "planning|implementation|verification|documentation"/g)
+    const freeRoles = pm.match(/[a-z-]+: "(orchestration|planning|implementation|verification|documentation)"/g)
     expect(freeRoles).not.toBeNull()
     expect(freeRoles!.length).toBeGreaterThanOrEqual(7) // vision role uses "vision" key, not in this regex
   })
@@ -303,10 +314,36 @@ describe("Package and build", () => {
     expect(pkg.files).toEqual(expect.arrayContaining(["scripts"]))
   })
 
+  test("package.json files covers every asset postinstall reads", () => {
+    const pkg = JSON.parse(read("package.json"))
+    const pi = read("postinstall.mjs")
+    // Every `resolve(__dirname, "seg", ...)` is a path inside the published tarball.
+    const roots = new Set(
+      [...pi.matchAll(/resolve\(__dirname,\s*"([^"]+)"(?:,\s*"([^"]+)")?/g)].map((m) =>
+        m[1] === ".opencode" ? `${m[1]}/${m[2]}` : m[1]
+      )
+    )
+    expect(roots.size).toBeGreaterThan(0)
+    for (const root of roots) {
+      expect(pkg.files).toEqual(expect.arrayContaining([root]))
+    }
+  })
+
+  test("theme source is shipped where postinstall looks for it", () => {
+    expect(statSync(".opencode/themes/devloom-night-owl.json").isFile()).toBe(true)
+  })
+
   test("postinstall copies profile manager", () => {
     const pi = read("postinstall.mjs")
     expect(pi).toContain("Installing profile manager scripts")
     expect(pi).toContain("devloom-scripts")
+  })
+
+  test("postinstall registers devloom-refresh and the plugin cache helper", () => {
+    const pi = read("postinstall.mjs")
+    expect(pi).toContain("devloom-refresh")
+    expect(pi).toContain("plugin-cache.mjs")
+    expect(pi).toContain("refreshOpenCodePluginCache")
   })
 })
 

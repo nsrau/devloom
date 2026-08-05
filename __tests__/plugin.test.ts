@@ -1,5 +1,5 @@
 import { jest, describe, expect, test, beforeEach, afterEach } from "@jest/globals"
-import { existsSync, mkdtempSync, mkdirSync, rmSync } from "fs"
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs"
 import { tmpdir } from "os"
 import { join } from "path"
 import { createLifecycleHooks } from "../src/plugin.js"
@@ -37,11 +37,51 @@ describe("createLifecycleHooks", () => {
   test("returns hooks object with expected keys", () => {
     const hooks = createLifecycleHooks({} as any)
     expect(hooks).toHaveProperty("event")
+    expect(hooks).toHaveProperty("config")
     expect(hooks).toHaveProperty(["chat.message"])
     expect(hooks).toHaveProperty(["experimental.chat.system.transform"])
     expect(hooks).toHaveProperty(["experimental.session.compacting"])
     expect(hooks).toHaveProperty(["tool.execute.before"])
     expect(hooks).toHaveProperty(["tool.execute.after"])
+  })
+
+  test("config hook injects devloom agents from active profile", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "devloom-plugin-config-"))
+    try {
+      mkdirSync(join(dir, ".opencode", "devloom"), { recursive: true })
+      writeFileSync(
+        join(dir, ".opencode", "devloom", "config.json"),
+        JSON.stringify({
+          profile: "go-flash",
+          resolvedProfile: "go-flash",
+          models: {
+            developer: "opencode-go/deepseek-v4-flash",
+            planner: "opencode-go/deepseek-v4-flash",
+          },
+        })
+      )
+      const hooks = createLifecycleHooks({ directory: dir } as any)
+      const cfg: any = { agent: {} }
+      await hooks.config!(cfg)
+      expect(cfg.agent["devloom-developer"]?.model).toBe("opencode-go/deepseek-v4-flash")
+      expect(cfg.agent["devloom-orchestrator"]?.model).toBe("opencode-go/deepseek-v4-flash")
+      expect(cfg.agent["devloom-developer"]?.mode).toBe("subagent")
+      expect(Object.keys(cfg.agent)).toHaveLength(15)
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  test("config hook is a no-op without profile config", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "devloom-plugin-config-empty-"))
+    try {
+      const hooks = createLifecycleHooks({ directory: dir } as any)
+      const cfg: any = { agent: { build: { mode: "primary" } } }
+      await hooks.config!(cfg)
+      expect(Object.keys(cfg.agent)).toHaveLength(1)
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
   })
 
   test("chat.message appends synthetic guard part for main agent", async () => {
@@ -111,6 +151,47 @@ describe("createLifecycleHooks", () => {
         { args: { filePath: "src/app.ts" } }
       )
     ).resolves.toBeUndefined()
+  })
+
+  test("blocks orchestrator bash writes outside devloom state dir", async () => {
+    const hooks = createLifecycleHooks({} as any)
+    const msgOutput = { message: { id: "m", sessionID: "sess-6" }, parts: [] as any[] }
+    await hooks["chat.message"]!({ sessionID: "sess-6", agent: "devloom-orchestrator" } as any, msgOutput as any)
+    await expect(
+      hooks["tool.execute.before"]!(
+        { tool: "bash", sessionID: "sess-6", callID: "c1" },
+        { args: { command: "echo x > src/app.ts" } }
+      )
+    ).rejects.toThrow("DevLoom guard")
+    await expect(
+      hooks["tool.execute.before"]!(
+        { tool: "bash", sessionID: "sess-6", callID: "c2" },
+        { args: { command: "echo '{}' > .opencode/devloom/project/state.json" } }
+      )
+    ).resolves.toBeUndefined()
+  })
+
+  test("keeps the persisted session map bounded", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "devloom-plugin-"))
+    try {
+      mkdirSync(join(dir, ".opencode", "devloom"), { recursive: true })
+      const hooks = createLifecycleHooks({ directory: dir } as any)
+      for (let i = 0; i < 250; i++) {
+        await hooks["chat.message"]!(
+          { sessionID: `sess-${i}`, agent: "devloom-developer" } as any,
+          { message: { id: "m", sessionID: `sess-${i}` }, parts: [] as any[] } as any
+        )
+      }
+      const persisted = JSON.parse(
+        readFileSync(join(dir, ".opencode", "devloom", ".sessions.json"), "utf8")
+      ) as Record<string, string>
+      const ids = Object.keys(persisted)
+      expect(ids.length).toBeLessThanOrEqual(100)
+      expect(ids).toContain("sess-249")
+      expect(ids).not.toContain("sess-0")
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
   })
 
   test("does not log when DEVLOOM_DEBUG is not set", () => {

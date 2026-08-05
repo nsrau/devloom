@@ -2,7 +2,6 @@
 description: "DevLoom Developer Flash: callable by the orchestrator for simple ticket implementation and defect fixes"
 mode: subagent
 model: opencode-go/deepseek-v4-flash
-hidden: true
 permission:
   edit: allow
   bash: allow

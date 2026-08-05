@@ -392,8 +392,14 @@ All agents on DeepSeek V4 Flash for maximum throughput at minimum cost:
 
 Uses only OpenCode Free models (zero cost). The profile auto-picks the best
 available free model per agent role using a candidate chain.
-Fallback order: nemotron-3-ultra-free → big-pickle → mimo-v2.5-free →
-deepseek-v4-flash-free → north-mini-code-free → hy3-free.
+
+The orchestrator uses `deepseek-v4-flash-free` (cheap, high-volume routing).
+Role fallback order:
+- **orchestration / implementation / verification**: deepseek-v4-flash-free →
+  mimo-v2.5-free → nemotron-3-ultra-free → big-pickle → north-mini-code-free
+- **planning / documentation**: nemotron-3-ultra-free → mimo-v2.5-free →
+  deepseek-v4-flash-free → big-pickle → north-mini-code-free
+- **vision**: mimo-v2.5-free → go multimodal fallbacks
 
 ### Model-routing table (go)
 
@@ -437,6 +443,31 @@ If you forget the prefix, DevLoom adds it automatically and logs a warning.
 If no `config.json` exists, Phase 0 detects available models (`opencode models`),
 asks which profile to use (**go**, **go-economy**, or **free**), then
 assigns the best model per agent role for the chosen profile.
+
+### Profile & sidebar visibility
+
+OpenCode installs npm plugins into a package cache (`~/.cache/opencode/packages`)
+with `ignoreScripts`, so the DevLoom plugin code there can go stale. The DevLoom
+`postinstall` and the `/devloom-refresh` command re-copy the current plugin code
+(including the `config` hook that injects all 15 DevLoom agents + the active
+profile into the OpenCode sidebar) into that cache, rebuilding `dist/` from
+source first so the cache never receives stale compiled code.
+
+- After installing or updating DevLoom, run `/devloom-refresh` once, then
+  **restart opencode** (or continue with `opencode --continue`) to pick up the
+  refreshed plugin.
+- The sidebar header shows the active profile (`DevLoom - free`,
+  `DevLoom - go`, ...) and every agent row shows its resolved model
+  (`orchestrator: opencode/deepseek-v4-flash-free`, ...). The orchestrator
+  agent description also carries the profile label:
+  `DevLoom Orchestrator: autonomous multi-agent delivery (profile: go-flash)`,
+  extended to `(profile: go, tier: senior)` with a senior tier override.
+- The sidebar shows only the 8 base agents — all `-flash` and `-senior`
+  variants are hidden for every profile. The variants stay registered so
+  orchestrator `task()` routing keeps working; they are simply not listed.
+- Switching profiles (`/devloom-go`, `/devloom-go-flash`, `/devloom-free`, ...)
+  updates the installed agent files immediately; restart opencode to see the
+  updated profile and models in the sidebar.
 
 ---
 

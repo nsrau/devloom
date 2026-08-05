@@ -95,11 +95,14 @@ export function readRunLog(rootDir: string, limit?: number): RunLogEntry[] {
   return entries
 }
 
+/** The loop runs on a cron cadence — cap the log so it cannot grow forever. */
+export const RUN_LOG_MAX_ENTRIES = 200
+
 export function appendRunLog(rootDir: string, entry: RunLogEntry): void {
   const path = join(loopWorkspaceDir(rootDir), "run-log.json")
   const entries = readJson<RunLogEntry[]>(path, [])
   entries.push(entry)
-  writeJson(path, entries)
+  writeJson(path, entries.slice(-RUN_LOG_MAX_ENTRIES))
 }
 
 export function readBudget(rootDir: string): Budget {

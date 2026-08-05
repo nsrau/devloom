@@ -87,6 +87,28 @@ describe("worktree module", () => {
       const entry2 = createWorktree(dir, "devloom/T-1/developer")
       expect(existsSync(entry2.path)).toBe(true)
     })
+
+    test("a sibling branch sharing a prefix is not treated as a collision", () => {
+      // `devloom/T-1/developer-old` must not make `devloom/T-1/developer` look
+      // like an existing branch — the resulting `branch -D` would throw.
+      createWorktree(dir, "devloom/T-1/developer-old")
+      const entry = createWorktree(dir, "devloom/T-1/developer")
+      expect(existsSync(entry.path)).toBe(true)
+      expect(listWorktrees(dir).map((w) => w.branch).sort()).toEqual([
+        "devloom/T-1/developer",
+        "devloom/T-1/developer-old",
+      ])
+    })
+
+    test("branch names with shell metacharacters are passed literally (no injection)", () => {
+      // `$()`/backticks must never be interpolated into a shell string. Even
+      // though git rejects `$` in refnames, the command substitution would have
+      // executed BEFORE git validated the name in the old shell-based path.
+      const marker = join(dir, "PWNED")
+      expect(() => createWorktree(dir, "devloom/T-9/$(touch PWNED)")).toThrow()
+      expect(existsSync(marker)).toBe(false)
+      expect(listWorktrees(dir)).toHaveLength(0)
+    })
   })
 
   describe("listWorktrees", () => {

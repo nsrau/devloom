@@ -2,7 +2,6 @@
 description: "DevLoom Security Senior: callable by the orchestrator for deep CRUD endpoint and exposure-surface review"
 mode: subagent
 model: opencode-go/glm-5.2
-hidden: true
 permission:
   edit: allow
   bash: allow

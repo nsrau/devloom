@@ -10,7 +10,7 @@ jest.spyOn(process, "exit").mockImplementation(() => undefined as unknown as nev
 jest.spyOn(console, "log").mockImplementation(() => {})
 jest.spyOn(console, "error").mockImplementation(() => {})
 
-const { getConfigDir, isPathSafe, ensureDir, installFile, isDebug } = await import("../postinstall.mjs")
+const { getConfigDir, isPathSafe, ensureDir, installFile, isDebug, ensureTuiPlugin } = await import("../postinstall.mjs")
 
 describe("getConfigDir", () => {
   beforeEach(() => {
@@ -117,6 +117,14 @@ describe("installFile", () => {
     errorSpy.mockRestore()
   })
 
+  test("skips a missing optional source without failing the install", () => {
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {})
+    installFile("/nonexistent/theme.json", join(tmpDir, "dest.json"), "Optional", tmpDir, true)
+    expect(errorSpy).not.toHaveBeenCalled()
+    expect(existsSync(join(tmpDir, "dest.json"))).toBe(false)
+    errorSpy.mockRestore()
+  })
+
   test("blocks path traversal", () => {
     const src = join(tmpDir, "source.md")
     writeFileSync(src, "test")
@@ -162,6 +170,51 @@ describe("installFile", () => {
     expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("No write permission"))
     errorSpy.mockRestore()
     chmodSync(destDir, 0o755)
+  })
+})
+
+describe("ensureTuiPlugin", () => {
+  let tmpDir: string
+
+  beforeEach(() => {
+    tmpDir = mkdtempSync(join(tmpdir(), "devloom-tui-"))
+  })
+
+  afterEach(() => {
+    rmSync(tmpDir, { recursive: true, force: true })
+  })
+
+  test("creates tui.json with the devloom TUI plugin when the file is missing", () => {
+    const tuiPath = join(tmpDir, "tui.json")
+    const tui = ensureTuiPlugin(tuiPath) as unknown as Record<string, unknown>
+    expect(tui.plugin).toEqual(["devloom"])
+    expect(JSON.parse(readFileSync(tuiPath, "utf8")).plugin).toEqual(["devloom"])
+    expect(JSON.parse(readFileSync(tuiPath, "utf8")).$schema).toContain("opencode.ai/tui.json")
+  })
+
+  test("preserves the theme and existing keys while adding the plugin", () => {
+    const tuiPath = join(tmpDir, "tui.json")
+    writeFileSync(tuiPath, JSON.stringify({ $schema: "https://opencode.ai/tui.json", theme: "custom-theme" }))
+    const tui = ensureTuiPlugin(tuiPath) as unknown as Record<string, unknown>
+    expect(tui.theme).toBe("custom-theme")
+    expect(tui.plugin).toEqual(["devloom"])
+    const onDisk = JSON.parse(readFileSync(tuiPath, "utf8"))
+    expect(onDisk.theme).toBe("custom-theme")
+    expect(onDisk.plugin).toEqual(["devloom"])
+  })
+
+  test("dedupes an existing devloom plugin entry", () => {
+    const tuiPath = join(tmpDir, "tui.json")
+    writeFileSync(tuiPath, JSON.stringify({ plugin: ["devloom", "other"] }))
+    const tui = ensureTuiPlugin(tuiPath) as unknown as Record<string, unknown>
+    expect(tui.plugin).toEqual(["other", "devloom"])
+  })
+
+  test("returns null on a corrupt tui.json without overwriting it", () => {
+    const tuiPath = join(tmpDir, "tui.json")
+    writeFileSync(tuiPath, "{ not json")
+    expect(ensureTuiPlugin(tuiPath)).toBeNull()
+    expect(readFileSync(tuiPath, "utf8")).toBe("{ not json")
   })
 })
 

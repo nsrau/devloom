@@ -2,7 +2,6 @@
 description: "DevLoom QA: callable by the orchestrator for verification, code review, and regression"
 mode: subagent
 model: opencode-go/deepseek-v4-flash
-hidden: true
 permission:
   edit: allow
   bash: allow

@@ -158,7 +158,7 @@ persists state, while the matching subagent executes each specialist phase.
 
 ### Default (no config)
 
-All agents default to `opencode/nemotron-3-ultra-free` — a capable free model.
+All agents default to `opencode/deepseek-v4-flash-free` — a fast, capable free model.
 
 ### Model Routing — Three Profiles
 
@@ -247,14 +247,14 @@ The profile determines which model is assigned to each of the 8 agent roles. Pre
 ```json
 {
   "models": {
-    "orchestrator": "opencode/big-pickle",
+    "orchestrator": "opencode/deepseek-v4-flash-free",
     "planner": "opencode/nemotron-3-ultra-free",
-    "developer": "opencode/nemotron-3-ultra-free",
-    "qa": "opencode/nemotron-3-ultra-free",
-    "verifier": "opencode/nemotron-3-ultra-free",
-    "security": "opencode/nemotron-3-ultra-free",
+    "developer": "opencode/deepseek-v4-flash-free",
+    "qa": "opencode/deepseek-v4-flash-free",
+    "verifier": "opencode/deepseek-v4-flash-free",
+    "security": "opencode/deepseek-v4-flash-free",
     "documenter": "opencode/nemotron-3-ultra-free",
-    "vision": "opencode-go/qwen3.6-plus"
+    "vision": "opencode/mimo-v2.5-free"
   }
 }
 ```
@@ -300,8 +300,12 @@ If no `config.json` exists, Phase 0 detects available models (`opencode models`)
 |---|
 | `opencode/big-pickle` |
 | `opencode/deepseek-v4-flash-free` |
+| `opencode/laguna-s-2.1-free` |
+| `opencode/ling-3.0-flash-free` |
+| `opencode/longcat-2.0-free` |
 | `opencode/mimo-v2.5-free` |
 | `opencode/nemotron-3-ultra-free` |
+| `opencode/north-mini-code-free` |
 
 **Go tier** (`opencode-go/` — higher quality, paid):
 
@@ -346,6 +350,31 @@ node $(npm root -g)/devloom/postinstall.mjs
 ```
 
 This re-installs agent files from the installed package. Then start a weave to apply your config models.
+
+### Profile and agents in the sidebar
+
+OpenCode installs npm plugins into `~/.cache/opencode/packages/` with
+`ignoreScripts`, so the DevLoom plugin code there can go stale. When it does,
+the plugin's `config` hook never runs and the sidebar does not reflect the
+profile or the injected agent configs. DevLoom keeps that cache in sync:
+
+- The package `postinstall` and the `/devloom-refresh` command re-copy the
+  current plugin code (the hook that injects all 15 agents + the active
+  profile) into the OpenCode plugin cache. The refresh rebuilds `dist/` from
+  source first, so the cache never receives stale compiled code.
+- The sidebar header shows the active profile (`DevLoom - free`, `DevLoom - go`,
+  ...) and every agent row shows its resolved model (e.g.
+  `orchestrator: opencode/deepseek-v4-flash-free`). The active profile is also
+  visible on the orchestrator agent description:
+  `DevLoom Orchestrator: autonomous multi-agent delivery (profile: go-flash)`.
+  With a senior tier override the label is extended to
+  `(profile: go, tier: senior)`.
+- The sidebar shows only the 8 base agents — all `-flash` and `-senior`
+  variants are hidden for every profile. All 15 agents stay registered, so the
+  orchestrator can still delegate to hidden variants via `task()`.
+- After installing/updating DevLoom or switching profiles, **restart opencode**
+  (or continue with `opencode --continue`) to see the updated profile and
+  agents in the sidebar.
 
 ---
 

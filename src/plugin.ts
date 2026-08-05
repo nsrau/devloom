@@ -3,6 +3,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import type { Hooks, PluginInput } from "@opencode-ai/plugin"
 import { ensureProjectWorkspace } from "./bootstrap.js"
+import { injectDevloomAgents } from "./agents.js"
 import { autoGenerateContextIfMissing, ensureAtlas } from "./context.js"
 import { ensureLoopWorkspace } from "./loop.js"
 import {
@@ -14,6 +15,7 @@ import {
 } from "./guard.js"
 
 const PLUGIN_NAME = "devloom"
+const MAX_TRACKED_SESSIONS = 100
 
 const COMPACTION_CONTEXT = [
   "DevLoom is active in this project. The summary MUST preserve:",
@@ -46,8 +48,18 @@ function createLifecycleHooks(_ctx: PluginInput): Hooks {
     } catch { /* ignore corrupt file */ }
   }
 
+  // Insertion-ordered Map: evicting from the front drops the oldest sessions.
+  const trimSessions = () => {
+    while (agentBySession.size > MAX_TRACKED_SESSIONS) {
+      const oldest = agentBySession.keys().next().value
+      if (oldest === undefined) break
+      agentBySession.delete(oldest)
+    }
+  }
+
   const persistSessions = () => {
     if (!sessionsFile) return
+    trimSessions()
     try {
       writeFileSync(sessionsFile, JSON.stringify(Object.fromEntries(agentBySession)))
     } catch { /* best effort */ }
@@ -73,8 +85,13 @@ function createLifecycleHooks(_ctx: PluginInput): Hooks {
       })
     },
 
+    config: async (cfg) => {
+      if (!rootDir) return
+      injectDevloomAgents(cfg, rootDir)
+    },
+
     "chat.message": async (input, output) => {
-      if (input.agent) {
+      if (input.agent && agentBySession.get(input.sessionID) !== input.agent) {
         agentBySession.set(input.sessionID, input.agent)
         persistSessions()
       }
@@ -109,9 +126,10 @@ function createLifecycleHooks(_ctx: PluginInput): Hooks {
         isBlockedOrchestratorCall(tool, output.args)
       ) {
         throw new Error(
-          "DevLoom guard: the orchestrator must not modify project files directly. " +
-            'Delegate via task(subagent:"devloom-developer" | "devloom-repair" | ...). ' +
-            "Only state writes under .opencode/devloom/ are allowed."
+          "DevLoom guard: the orchestrator must not modify project files directly — " +
+            "this applies to write/edit/patch and to bash commands that write, move, or delete files. " +
+            'Delegate via task(subagent:"devloom-developer" | "devloom-qa" | ...). ' +
+            "Only writes under .opencode/devloom/ are allowed."
         )
       }
     },

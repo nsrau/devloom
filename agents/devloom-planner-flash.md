@@ -2,7 +2,6 @@
 description: "DevLoom Planner Flash: callable by the orchestrator for lightweight requirements and planning"
 mode: subagent
 model: opencode-go/deepseek-v4-flash
-hidden: true
 permission:
   edit: allow
   bash: allow

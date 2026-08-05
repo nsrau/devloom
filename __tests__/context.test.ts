@@ -164,6 +164,19 @@ describe("context module", () => {
       expect(content).toContain("POST")
     })
 
+    test("examples.md ignores node_modules and other vendored dirs", () => {
+      setupProject(dir)
+      // A malicious/vendored route inside node_modules must never be picked up
+      // as the project's API pattern.
+      mkdirSync(join(dir, "node_modules", "evil", "api"), { recursive: true })
+      writeFileSync(join(dir, "node_modules", "evil", "api", "route.ts"), "export async function EVIL() {}")
+      writeFileSync(join(dir, "node_modules", "index.ts"), "export const x = 1")
+      generateContext(dir, true)
+      const content = readFileSync(contextFilePath(dir, "examples.md"), "utf8")
+      expect(content).toContain("POST")
+      expect(content).not.toContain("EVIL")
+    })
+
     test("all generated files are under MVI limit (200 lines)", () => {
       setupProject(dir)
       generateContext(dir, true)

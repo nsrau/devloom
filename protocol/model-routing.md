@@ -17,9 +17,7 @@ Each of the 8 DevLoom agents (orchestrator, planner, developer, qa, verifier, se
 ```
 
 ## Profiles
-
 ### go (max quality)
-
 The highest quality profile for production work. Orchestrator uses DeepSeek V4 Flash (cheapest — runs every turn; vision delegated to `devloom-vision`). Qwen 3.7 Max to planner (strong reasoning), Kimi K2.7 Code to implementation, GLM 5.2 to security (forensic depth), DeepSeek V4 Pro to QA/verifier, Qwen 3.7 Plus to documentation, Qwen 3.6 Plus to vision (low-cost multimodal).
 
 | Role | Model |
@@ -34,7 +32,6 @@ The highest quality profile for production work. Orchestrator uses DeepSeek V4 F
 | vision | opencode-go/qwen3.6-plus |
 
 ### go-economy
-
 A lower cost profile that retains Kimi K2.7 Code for the developer role and uses DeepSeek V4 Pro for orchestrator, qa, verifier, and security roles. Qwen 3.6 Plus handles documentation at reduced cost. Suitable for routine development work where premium reasoning is not essential.
 
 | Role | Model |
@@ -49,7 +46,6 @@ A lower cost profile that retains Kimi K2.7 Code for the developer role and uses
 | vision | opencode-go/qwen3.6-plus |
 
 ### go-flash
-
 All agents on DeepSeek V4 Flash for maximum throughput at minimum cost. Vision uses Qwen 3.6 Plus (multimodal).
 
 | Role | Model |
@@ -64,7 +60,6 @@ All agents on DeepSeek V4 Flash for maximum throughput at minimum cost. Vision u
 | vision | opencode-go/qwen3.6-plus |
 
 ### deepseek
-
 All DeepSeek V4 Pro agents (consistent provider affinity). Vision uses Qwen 3.6 Plus (multimodal).
 
 | Role | Model |
@@ -79,12 +74,18 @@ All DeepSeek V4 Pro agents (consistent provider affinity). Vision uses Qwen 3.6 
 | vision | opencode-go/qwen3.6-plus |
 
 ### free
-
-A zero-cost profile using only freely available models. Intended for experimentation, open-source projects, learning, and low-stakes development where cost must be zero. All agents use the best available free-tier model. If a specific free model is unavailable, the fallback chain is: opencode/nemotron-3-ultra-free -> opencode/big-pickle -> opencode/mimo-v2.5-free -> opencode/deepseek-v4-flash-free -> opencode/north-mini-code-free -> opencode/hy3-free.
+A zero-cost profile using only freely available models. Intended for experimentation, open-source projects, learning, and low-stakes development where cost must be zero. All agents use the best available free-tier model. If a specific free model is unavailable, the fallback chains are: orchestration/implementation/verification: opencode/deepseek-v4-flash-free -> opencode/mimo-v2.5-free -> opencode/nemotron-3-ultra-free -> opencode/big-pickle -> opencode/north-mini-code-free; planning/documentation: opencode/nemotron-3-ultra-free -> opencode/mimo-v2.5-free -> opencode/deepseek-v4-flash-free -> opencode/big-pickle -> opencode/north-mini-code-free; vision: opencode/mimo-v2.5-free -> opencode-go/minimax-m3.
 
 | Role | Model |
 |---|---|
-| all agents | opencode/nemotron-3-ultra-free |
+| orchestrator | opencode/deepseek-v4-flash-free |
+| planner | opencode/nemotron-3-ultra-free |
+| developer | opencode/deepseek-v4-flash-free |
+| qa | opencode/deepseek-v4-flash-free |
+| verifier | opencode/deepseek-v4-flash-free |
+| security | opencode/deepseek-v4-flash-free |
+| documenter | opencode/nemotron-3-ultra-free |
+| vision | opencode/mimo-v2.5-free |
 
 ## Model Guidance
 
@@ -128,7 +129,7 @@ Qwen 3.7 Plus (opencode-go/qwen3.7-plus) is the latest Qwen model — documentat
 
 ### When to Use Free Tier Models
 
-Free models (opencode/nemotron-3-ultra-free, opencode/big-pickle, opencode/mimo-v2.5-free, opencode/deepseek-v4-flash-free, opencode/north-mini-code-free, opencode/hy3-free) are suitable only when cost must be zero — experimentation, learning, or evaluation. They have lower reasoning capability and smaller context windows, not recommended for production work.
+Free models (opencode/deepseek-v4-flash-free, opencode/nemotron-3-ultra-free, opencode/mimo-v2.5-free, opencode/big-pickle, opencode/north-mini-code-free, opencode/laguna-s-2.1-free, opencode/ling-3.0-flash-free, opencode/longcat-2.0-free) are suitable only when cost must be zero — experimentation, learning, or evaluation. They have lower reasoning capability and smaller context windows, not recommended for production work.
 
 ## Frontend vs Backend Guidance
 
@@ -191,3 +192,8 @@ Individual role assignments can be overridden by adding a `modelRoutingOverrides
 ```
 
 Overrides merge on top of the selected profile and take precedence for the specified roles.
+
+### Sidebar visibility and plugin cache
+
+The sidebar reflects the active profile via the plugin `config` hook, which injects all 15 agents, renders a `DevLoom - {profile}` header, and shows the resolved model next to every agent row. The orchestrator agent description carries the profile label — e.g. `DevLoom Orchestrator: autonomous multi-agent delivery (profile: go-flash)`, extended to `(profile: go, tier: senior)` when the senior tier is active. The sidebar lists only the 8 base agents: all `-flash` and `-senior` variants are hidden for every profile, yet all 15 stay registered so `task()` routing is unaffected.
+OpenCode installs npm plugins into `~/.cache/opencode/packages/` with `ignoreScripts`, so the cached copy can go stale and the hook never runs. Run `/devloom-refresh` after installing/updating DevLoom or switching profiles — it rebuilds `dist/` from source before refreshing the cache — then restart opencode (or `opencode --continue`) to see the updated profile and agents in the sidebar.

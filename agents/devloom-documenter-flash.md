@@ -2,7 +2,6 @@
 description: "DevLoom Documenter Flash: callable by the orchestrator for lightweight documentation and state updates"
 mode: subagent
 model: opencode-go/deepseek-v4-flash
-hidden: true
 permission:
   edit: allow
   bash: allow

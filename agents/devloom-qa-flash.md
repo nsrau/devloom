@@ -2,7 +2,6 @@
 description: "DevLoom QA Flash: callable by the orchestrator for lightweight verification, code review, and regression"
 mode: subagent
 model: opencode-go/deepseek-v4-flash
-hidden: true
 permission:
   edit: allow
   bash: allow

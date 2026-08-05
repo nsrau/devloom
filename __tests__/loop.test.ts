@@ -7,6 +7,7 @@ import {
   writeLoopConfig,
   readRunLog,
   appendRunLog,
+  RUN_LOG_MAX_ENTRIES,
   readBudget,
   writeBudget,
   checkBudget,
@@ -119,6 +120,25 @@ describe("loop module", () => {
       }
       const limited = readRunLog(dir, 3)
       expect(limited).toHaveLength(3)
+    })
+
+    test("appendRunLog caps the log and keeps the newest entries", () => {
+      ensureLoopWorkspace(dir)
+      const total = RUN_LOG_MAX_ENTRIES + 50
+      for (let i = 0; i < total; i++) {
+        appendRunLog(dir, {
+          timestamp: new Date(Date.UTC(2026, 6, 8, 0, 0, i)).toISOString(),
+          pattern: `run-${i}`,
+          agentsUsed: [],
+          outcome: "success",
+          tokenCost: 1,
+          durationMs: 1,
+        })
+      }
+      const entries = readRunLog(dir)
+      expect(entries).toHaveLength(RUN_LOG_MAX_ENTRIES)
+      expect(entries[entries.length - 1].pattern).toBe(`run-${total - 1}`)
+      expect(entries[0].pattern).toBe(`run-${total - RUN_LOG_MAX_ENTRIES}`)
     })
 
   })

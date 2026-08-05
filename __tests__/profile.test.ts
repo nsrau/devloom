@@ -21,7 +21,9 @@ const ALL_GO_MODELS = [
 const ALL_FREE_MODELS = [
   "opencode/nemotron-3-ultra-free",
   "opencode/north-mini-code-free",
-  "opencode/hy3-free",
+  "opencode/laguna-s-2.1-free",
+  "opencode/ling-3.0-flash-free",
+  "opencode/longcat-2.0-free",
   "opencode/mimo-v2.5-free",
   "opencode/deepseek-v4-flash-free",
   "opencode/big-pickle",
@@ -31,6 +33,7 @@ const ALL_MODELS = [...ALL_GO_MODELS, ...ALL_FREE_MODELS]
 
 let mockAvailable: string[] = []
 let writtenFiles: Record<string, string> = {}
+let mockDirs: Record<string, string[]> = {}
 let mockExitError: Error | null = null
 
 jest.unstable_mockModule("child_process", () => ({
@@ -39,6 +42,7 @@ jest.unstable_mockModule("child_process", () => ({
     if (cmd.startsWith("chmod")) return ""
     return ""
   },
+  execFileSync: () => "",
 }))
 
 jest.unstable_mockModule("fs", () => ({
@@ -49,14 +53,21 @@ jest.unstable_mockModule("fs", () => ({
   writeFileSync: (p: string, c: string) => {
     writtenFiles[p] = c
   },
-  existsSync: (p: string) => p in writtenFiles,
+  existsSync: (p: string) => (p in writtenFiles) || (p in mockDirs),
   mkdirSync: () => {},
-  readdirSync: () => [],
+  readdirSync: (p: string) => mockDirs[p] ?? [],
   cpSync: () => {},
+  copyFileSync: (src: string, dest: string) => {
+    // Mimic real copying so refresh effects are observable via writtenFiles.
+    if (writtenFiles[src] !== undefined) writtenFiles[dest] = writtenFiles[src]
+  },
+  rmSync: () => {},
+  statSync: () => ({ isDirectory: () => false }),
 }))
 
 jest.unstable_mockModule("os", () => ({
   homedir: () => HOME,
+  platform: () => "linux",
 }))
 
 describe("profile.mjs", () => {
@@ -84,6 +95,7 @@ describe("profile.mjs", () => {
     const profile = await importProfile()
     const config = profile.cmdSet("free")
     expect(Object.keys(config.models)).toHaveLength(8)
+    expect(config.models.orchestrator).toBe("opencode/deepseek-v4-flash-free")
     for (const [role, model] of Object.entries(config.models) as [string, string][]) {
       if (role === "vision") {
         // ponytail: no free vision models exist; free profile falls back to cheapest multimodal
@@ -211,5 +223,158 @@ describe("profile.mjs", () => {
     for (const [, model] of Object.entries(config.models) as [string, string][]) {
       expect(model).toBeTruthy()
     }
+  })
+
+  test("applyModelsToAgentFiles propagates model to all variants (senior, flash)", async () => {
+    const base = `${AGENTS_DIR}/devloom-developer.md`
+    const flash = `${AGENTS_DIR}/devloom-developer-flash.md`
+    const senior = `${AGENTS_DIR}/devloom-developer-senior.md`
+    writtenFiles[base] = "model: old-base\n"
+    writtenFiles[flash] = "model: old-flash\n"
+    writtenFiles[senior] = "model: old-senior\n"
+    const profile = await importProfile()
+    profile.applyModelsToAgentFiles({ developer: "opencode-go/deepseek-v4-flash" })
+    expect(writtenFiles[base]).toContain("model: opencode-go/deepseek-v4-flash")
+    expect(writtenFiles[flash]).toContain("model: opencode-go/deepseek-v4-flash")
+    expect(writtenFiles[senior]).toContain("model: opencode-go/deepseek-v4-flash")
+  })
+
+  test("go-flash profile: all agent files (including senior variants) get v4-flash", async () => {
+    const agentFiles = [
+      "orchestrator", "planner", "planner-flash", "planner-senior",
+      "developer", "developer-flash", "developer-senior",
+      "qa", "qa-flash", "verifier", "security", "security-senior",
+      "documenter", "documenter-flash", "vision"
+    ]
+    for (const name of agentFiles) {
+      writtenFiles[`${AGENTS_DIR}/devloom-${name}.md`] = `model: stale-paid-model\n`
+    }
+    const profile = await importProfile()
+    const config = profile.cmdSet("go-flash")
+    for (const name of agentFiles) {
+      const content = writtenFiles[`${AGENTS_DIR}/devloom-${name}.md`]
+      if (name === "vision") {
+        expect(content).toContain("model: opencode-go/minimax-m3")
+      } else {
+        expect(content).toContain("model: opencode-go/deepseek-v4-flash")
+      }
+    }
+  })
+
+  test("applyModelsToAgentFiles stamps profile label into orchestrator description", async () => {
+    const orchestratorPath = `${AGENTS_DIR}/devloom-orchestrator.md`
+    writtenFiles[orchestratorPath] = 'description: "DevLoom Orchestrator: autonomous multi-agent delivery"\nmodel: old-model\n'
+    const profile = await importProfile()
+    profile.applyModelsToAgentFiles({ orchestrator: "opencode-go/deepseek-v4-flash" }, "go-flash")
+    const content = writtenFiles[orchestratorPath]
+    expect(content).toContain('description: "DevLoom Orchestrator: autonomous multi-agent delivery (profile: go-flash)"')
+    expect(content).toContain("model: opencode-go/deepseek-v4-flash")
+  })
+
+  test("applyModelsToAgentFiles profile label is idempotent", async () => {
+    const orchestratorPath = `${AGENTS_DIR}/devloom-orchestrator.md`
+    writtenFiles[orchestratorPath] = 'description: "DevLoom Orchestrator: autonomous multi-agent delivery (profile: go-flash)"\nmodel: x\n'
+    const profile = await importProfile()
+    profile.applyModelsToAgentFiles({ orchestrator: "opencode-go/deepseek-v4-flash" }, "go-flash")
+    const content = writtenFiles[orchestratorPath]
+    expect(content.match(/\(profile: go-flash\)/g)).toHaveLength(1)
+  })
+
+  test("applyModelsToAgentFiles leaves subagent descriptions untouched", async () => {
+    const developerPath = `${AGENTS_DIR}/devloom-developer.md`
+    writtenFiles[developerPath] = 'description: "DevLoom Developer: callable by the orchestrator"\nmodel: old\n'
+    const profile = await importProfile()
+    profile.applyModelsToAgentFiles({ developer: "opencode-go/deepseek-v4-flash" }, "go-flash")
+    expect(writtenFiles[developerPath]).toContain('description: "DevLoom Developer: callable by the orchestrator"')
+    expect(writtenFiles[developerPath]).not.toContain("(profile:")
+  })
+
+  test("applyModelsToAgentFiles does not stamp a tier marker", async () => {
+    const orchestratorPath = `${AGENTS_DIR}/devloom-orchestrator.md`
+    writtenFiles[orchestratorPath] = 'description: "DevLoom Orchestrator: autonomous multi-agent delivery"\nmodel: old\n'
+    const profile = await importProfile()
+    profile.applyModelsToAgentFiles({ orchestrator: "opencode-go/kimi-k3" }, "go")
+    const content = writtenFiles[orchestratorPath]
+    expect(content).toContain("(profile: go)")
+    expect(content).not.toContain("tier:")
+  })
+
+  test("cmdSet('go-flash') stamps profile into orchestrator agent description", async () => {
+    const orchestratorPath = `${AGENTS_DIR}/devloom-orchestrator.md`
+    writtenFiles[orchestratorPath] = 'description: "DevLoom Orchestrator: autonomous multi-agent delivery"\nmodel: stale\n'
+    const profile = await importProfile()
+    profile.cmdSet("go-flash")
+    expect(writtenFiles[orchestratorPath]).toContain("(profile: go-flash)")
+  })
+
+  test("cmdSet refreshes cached agent files and prints restart guidance when cache is fresh", async () => {
+    const orchestratorPath = `${AGENTS_DIR}/devloom-orchestrator.md`
+    writtenFiles[orchestratorPath] = 'description: "DevLoom Orchestrator: autonomous multi-agent delivery"\nmodel: stale\n'
+    mockDirs[AGENTS_DIR] = ["devloom-orchestrator.md"]
+    const cachePackages = `${HOME}/.cache/opencode/packages`
+    const cachePluginJs = `${cachePackages}/devloom/node_modules/devloom/dist/plugin.js`
+    const cacheAgentsJs = `${cachePackages}/devloom/node_modules/devloom/dist/agents.js`
+    const cacheOrchMd = `${cachePackages}/devloom/node_modules/devloom/agents/devloom-orchestrator.md`
+    mockDirs[cachePackages] = ["devloom"]
+    mockDirs[`${cachePackages}/devloom/node_modules/devloom`] = []
+    writtenFiles[cachePluginJs] = "export const hook = 'injectDevloomAgents'"
+    // Feature marker (profile-filter wiring) — a cache is only "fresh" with it.
+    writtenFiles[cacheAgentsJs] = "export function agentVariantVisible(profile, variant) { return true }"
+
+    const profile = await importProfile()
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {})
+    profile.cmdSet("go-flash")
+    // Cached agent files were refreshed with the freshly stamped orchestrator.
+    expect(writtenFiles[cacheOrchMd]).toContain("(profile: go-flash)")
+    // Restart guidance appears unconditionally after a profile change.
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("OpenCode plugin cache refreshed with the current profile."))
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("Restart opencode (or run: opencode --continue) to see the updated profile and agents in the sidebar."))
+    logSpy.mockRestore()
+  })
+
+  test("cmdApply prints stale plugin cache guidance when cached plugin lacks the config hook", async () => {
+    const orchestratorPath = `${AGENTS_DIR}/devloom-orchestrator.md`
+    writtenFiles[orchestratorPath] = 'description: "DevLoom Orchestrator: autonomous multi-agent delivery"\nmodel: stale\n'
+    writtenFiles[CONFIG_PATH] = JSON.stringify({
+      profile: "go-flash",
+      resolvedProfile: "go-flash",
+      models: { orchestrator: "opencode-go/deepseek-v4-flash" },
+    })
+    const cachePackages = `${HOME}/.cache/opencode/packages`
+    const cachePluginJs = `${cachePackages}/devloom/node_modules/devloom/dist/plugin.js`
+    mockDirs[cachePackages] = ["devloom"]
+    mockDirs[`${cachePackages}/devloom/node_modules/devloom`] = []
+    writtenFiles[cachePluginJs] = "// stale v1.0.0 plugin without the config hook"
+
+    const profile = await importProfile()
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {})
+    profile.cmdApply()
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("plugin cache is stale"))
+    expect(writtenFiles[orchestratorPath]).toContain("(profile: go-flash)")
+    logSpy.mockRestore()
+  })
+
+  test("cmdApply refreshes cached agent files when plugin cache is fresh", async () => {
+    const orchestratorPath = `${AGENTS_DIR}/devloom-orchestrator.md`
+    writtenFiles[orchestratorPath] = 'description: "DevLoom Orchestrator: autonomous multi-agent delivery"\nmodel: stale\n'
+    writtenFiles[CONFIG_PATH] = JSON.stringify({
+      profile: "go-flash",
+      resolvedProfile: "go-flash",
+      models: { orchestrator: "opencode-go/deepseek-v4-flash" },
+    })
+    const cachePackages = `${HOME}/.cache/opencode/packages`
+    const cachePluginJs = `${cachePackages}/devloom/node_modules/devloom/dist/plugin.js`
+    const cacheAgentsJs = `${cachePackages}/devloom/node_modules/devloom/dist/agents.js`
+    mockDirs[cachePackages] = ["devloom"]
+    mockDirs[`${cachePackages}/devloom/node_modules/devloom`] = []
+    writtenFiles[cachePluginJs] = "export const hook = 'injectDevloomAgents'"
+    writtenFiles[cacheAgentsJs] = "export function agentVariantVisible(profile, variant) { return true }"
+
+    const profile = await importProfile()
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {})
+    profile.cmdApply()
+    expect(logSpy).not.toHaveBeenCalledWith(expect.stringContaining("plugin cache is stale"))
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("updated profile and agents in the sidebar"))
+    logSpy.mockRestore()
   })
 })

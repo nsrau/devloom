@@ -3,6 +3,7 @@ import { copyFileSync, mkdirSync, existsSync, readdirSync, statSync, accessSync,
 import { resolve, dirname, join, relative } from "path"
 import { fileURLToPath } from "url"
 import { homedir, platform } from "os"
+import { getOpenCodeCacheDir, refreshOpenCodePluginCache, syncOpenCodePluginDependencies } from "./scripts/plugin-cache.mjs"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -36,11 +37,38 @@ export function ensureDir(dir) {
   }
 }
 
+// Register the DevLoom TUI plugin in tui.json's `plugin` array so OpenCode's
+// TUI loads the rightbar sidebar slot (no directory auto-discovery for TUI
+// plugins). Preserves every existing key (theme, keybinds, ...); dedupes the
+// plugin entry; returns the merged object, or null when the file is corrupt
+// (caller decides whether to warn).
+export function ensureTuiPlugin(tuiPath, pluginName = "devloom") {
+  let tui = {}
+  if (existsSync(tuiPath)) {
+    try {
+      tui = JSON.parse(readFileSync(tuiPath, "utf8"))
+    } catch {
+      return null
+    }
+  }
+  if (typeof tui !== "object" || tui === null || Array.isArray(tui)) return null
+  if (!tui.$schema) tui.$schema = "https://opencode.ai/tui.json"
+  const plugins = Array.isArray(tui.plugin) ? tui.plugin.filter((spec) => spec !== pluginName) : []
+  plugins.push(pluginName)
+  tui.plugin = plugins
+  writeFileSync(tuiPath, JSON.stringify(tui, null, 2) + "\n")
+  return tui
+}
+
 let installFailed = false
 
-export function installFile(src, dest, label, configDir) {
+export function installFile(src, dest, label, configDir, optional = false) {
   const baseDir = configDir || getConfigDir()
   if (!existsSync(src)) {
+    if (optional) {
+      console.log(`  Skipped (not shipped) -- ${label}`)
+      return
+    }
     console.error(`  Source file not found: ${src}`)
     installFailed = true
     return
@@ -118,7 +146,7 @@ const AGENTS = [
   "devloom-documenter-flash",
 ]
 
-const COMMANDS = ["devloom", "devloom-status", "devloom-resume", "devloom-init", "devloom-save", "devloom-auto", "devloom-go", "devloom-go-economy", "devloom-go-flash", "devloom-deepseek", "devloom-free", "devloom-plan", "devloom-context", "devloom-agents"]
+const COMMANDS = ["devloom", "devloom-status", "devloom-resume", "devloom-init", "devloom-save", "devloom-auto", "devloom-go", "devloom-go-economy", "devloom-go-flash", "devloom-deepseek", "devloom-free", "devloom-plan", "devloom-context", "devloom-agents", "devloom-refresh"]
 
 const SCRIPTS_DIR = resolve(CONFIG_DIR, "devloom-scripts")
 
@@ -165,6 +193,11 @@ function main() {
     resolve(COMMANDS_DIR, "profile.mjs"),
     "Profile manager"
   )
+  installFile(
+    resolve(__dirname, "scripts", "plugin-cache.mjs"),
+    resolve(COMMANDS_DIR, "plugin-cache.mjs"),
+    "Plugin cache helper"
+  )
 
   console.log("\nInstalling skills:")
   installDirRecursive(
@@ -202,33 +235,69 @@ function main() {
   ensureDir(THEMES_DIR)
   const themeSrc = resolve(__dirname, ".opencode", "themes", "devloom-night-owl.json")
   const themeDest = resolve(THEMES_DIR, "devloom-night-owl.json")
-  installFile(themeSrc, themeDest, "Theme: DevLoom Night Owl", CONFIG_DIR)
+  // ponytail: cosmetic asset — a missing theme must never fail the install
+  installFile(themeSrc, themeDest, "Theme: DevLoom Night Owl", CONFIG_DIR, true)
 
-  // Activate theme in tui.json if no theme is set
+  // Register the TUI plugin in tui.json (the right sidebar renders only plugin
+  // slots, so this is what makes the DevLoom agents visible in the rightbar)
+  // and activate the theme when no theme is set.
   const tuiPath = resolve(CONFIG_DIR, "tui.json")
-  if (existsSync(tuiPath)) {
-    try {
-      const tui = JSON.parse(readFileSync(tuiPath, "utf8"))
-      if (!tui.theme) {
-        tui.theme = "devloom-night-owl"
-        writeFileSync(tuiPath, JSON.stringify(tui, null, 2) + "\n")
-        console.log("  Theme activated in tui.json (change via /theme)")
-      } else {
-        console.log(`  Theme already set: ${tui.theme} (change via /theme)`)
-      }
-    } catch {
-      console.log("  Skipping tui.json update (parse error)")
-    }
+  const tui = ensureTuiPlugin(tuiPath)
+  if (tui === null) {
+    console.log("  Skipping tui.json update (parse error)")
   } else {
-    try {
-      writeFileSync(tuiPath, JSON.stringify({
-        $schema: "https://opencode.ai/tui.json",
-        theme: "devloom-night-owl"
-      }, null, 2) + "\n")
-      console.log("  Created tui.json with DevLoom Night Owl theme")
-    } catch {
-      console.log("  Could not create tui.json")
+    if (!tui.theme) {
+      tui.theme = "devloom-night-owl"
+      writeFileSync(tuiPath, JSON.stringify(tui, null, 2) + "\n")
+      console.log("  Theme activated in tui.json (change via /theme)")
+    } else {
+      console.log(`  Theme already set: ${tui.theme} (change via /theme)`)
     }
+    console.log("  DevLoom TUI plugin registered in tui.json (agents render in the right sidebar)")
+  }
+
+  // Refresh the OpenCode plugin cache so the plugin code loaded by the TUI
+  // actually contains the config hook that injects DevLoom agents + profile
+  // into the sidebar. Best-effort only: OpenCode installs plugins with
+  // ignoreScripts, so this copy is the only way the cache picks up new code.
+  // Cosmetic failures here must never fail the npm install.
+  console.log("\nRefreshing OpenCode plugin cache:")
+  const cacheDir = getOpenCodeCacheDir()
+  const refresh = refreshOpenCodePluginCache(__dirname, cacheDir)
+  if (refresh.build && refresh.build.built) {
+    console.log("  Rebuilt dist/ before refreshing the plugin cache.")
+  }
+  if (refresh.build && refresh.build.errors.length > 0) {
+    console.log(`  Warning (not fatal): dist rebuild failed — ${refresh.build.errors[0]}`)
+  }
+  for (const entry of refresh.refreshed) {
+    console.log(`  Refreshed plugin cache: ${entry} -> fresh DevLoom code with the sidebar config hook`)
+  }
+  for (const entry of refresh.skipped) {
+    console.log(`  Skipped: no OpenCode plugin cache entry found at ${entry}`)
+  }
+  for (const error of refresh.errors) {
+    console.log(`  Warning (not fatal): plugin cache refresh failed for ${error}`)
+  }
+  if (refresh.skipped.length > 0 && refresh.refreshed.length === 0) {
+    console.log("")
+    console.log("  DevLoom is not yet registered as an OpenCode plugin.")
+    console.log("  Install it once with: opencode plugin devloom --global")
+    console.log("  then re-run this installer (or /devloom-refresh) to sync the plugin code.")
+  } else if (refresh.errors.length > 0) {
+    console.log("  The plugin cache could not be fully refreshed — run /devloom-refresh to retry.")
+  }
+
+  console.log("\nSyncing plugin cache dependencies (TUI sidebar plugin):")
+  const deps = syncOpenCodePluginDependencies(__dirname, cacheDir)
+  for (const entry of deps.synced) {
+    console.log(`  Synced runtime deps: ${entry} (right-sidebar TUI plugin ready)`)
+  }
+  for (const entry of deps.skipped) {
+    console.log(`  Skipped: no OpenCode plugin cache entry found at ${entry}`)
+  }
+  for (const error of deps.errors) {
+    console.log(`  Warning (not fatal): dependency sync failed for ${error}`)
   }
 
   if (!installFailed) {

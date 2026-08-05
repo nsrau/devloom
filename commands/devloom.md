@@ -82,7 +82,7 @@ DEVLOOM_PROMPT="$SANITIZED_PROMPT" node -e "
 if [ -f ".opencode/devloom/config.json" ]; then
   echo "Applying local model config..."
 
-  PROFILE_MJS="$(dirname "$(readlink -f "$0")")/profile.mjs"
+  PROFILE_MJS="$(node -e 'const fs=require("fs"),p=require("path");console.log(p.join(p.dirname(fs.realpathSync(process.argv[1])),"profile.mjs"))' "$0" 2>/dev/null)"
   [ -f "$PROFILE_MJS" ] || PROFILE_MJS="$HOME/.config/opencode/devloom-scripts/profile.mjs"
   [ -f "$PROFILE_MJS" ] || PROFILE_MJS="$HOME/.config/opencode/commands/profile.mjs"
   [ -f "$PROFILE_MJS" ] || { echo "profile.mjs not found - reinstall DevLoom"; exit 1; }

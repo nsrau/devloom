@@ -1,9 +1,41 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync, statSync } from "node:fs"
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync, statSync, Dirent } from "node:fs"
 import { join, basename } from "node:path"
 
 export const CONTEXT_DIR = [".opencode", "devloom", "context"]
 export const CONTEXT_FILES = ["project.md", "conventions.md", "security.md", "examples.md"] as const
 export const MVI_MAX_LINES = 200
+
+/** Directories that must never influence project-wide detection or example extraction. */
+const SKIP_DIRS = new Set(["node_modules", ".git", "dist", "coverage", "build", "out", ".next", ".devloom-worktrees"])
+
+/**
+ * Walk a directory tree, pruning ignored dirs, and return up to `max` file paths
+ * RELATIVE to `dir`, sorted for determinism. `readdirSync({ recursive: true })`
+ * enumerates the whole tree every call — including node_modules — which is
+ * O(tree) I/O on every plugin init. `walkProject` skips ignored dirs up front;
+ * the returned cap is applied AFTER collection so callers always see files in a
+ * stable order rather than whatever directory traversal happened to hit first.
+ */
+function walkProject(dir: string, max = 100): string[] {
+  const results: string[] = []
+  const stack: Array<[string, string]> = [[dir, ""]]
+  while (stack.length > 0) {
+    const [abs, rel] = stack.pop()!
+    let entries: Dirent[]
+    try {
+      entries = readdirSync(abs, { withFileTypes: true })
+    } catch {
+      continue
+    }
+    for (const entry of entries) {
+      if (entry.name.startsWith(".") || SKIP_DIRS.has(entry.name)) continue
+      const relPath = rel ? `${rel}/${entry.name}` : entry.name
+      if (entry.isDirectory()) stack.push([join(abs, entry.name), relPath])
+      else results.push(relPath)
+    }
+  }
+  return results.sort().slice(0, max)
+}
 
 export type ContextFile = (typeof CONTEXT_FILES)[number]
 
@@ -266,9 +298,7 @@ function detectNamingConventions(rootDir: string): {
   let hasCamel = false
 
   try {
-    const entries = readdirSync(dirs, { recursive: true }) as string[]
-    for (const entry of entries.slice(0, 100)) {
-      const base = entry.split("/").pop() || entry
+    for (const base of walkProject(dirs, 100).map((p) => p.split("/").pop() || p)) {
       if (base.includes("-") && base.match(/^[a-z]/)) hasKebab = true
       if (base.match(/^[A-Z][a-zA-Z]*\.(ts|tsx|js|jsx)$/)) hasPascal = true
       if (base.match(/^[a-z][a-zA-Z]*\.(ts|tsx|js|jsx)$/) && !base.includes("-")) hasCamel = true
@@ -286,22 +316,22 @@ function findExampleFiles(rootDir: string, patterns: RegExp[], maxFiles = 3): st
   const srcDir = join(rootDir, "src")
   const searchDir = existsSync(srcDir) ? srcDir : rootDir
   const results: string[] = []
-  try {
-    const entries = readdirSync(searchDir, { recursive: true }) as string[]
-    for (const entry of entries) {
-      if (results.length >= maxFiles) break
-      const full = join(searchDir, entry)
-      try {
-        const stat = statSync(full)
-        if (!stat.isFile()) continue
-      } catch {
-        continue
-      }
-      if (patterns.some((p) => p.test(entry))) {
-        results.push(full)
-      }
+  // Walk a bounded candidate set (100 files, node_modules pruned) rather than
+  // capping the walk at maxFiles: a tiny cap can return paths that sort before
+  // the file the pattern is actually looking for.
+  for (const entry of walkProject(searchDir, 100)) {
+    const full = join(searchDir, entry)
+    try {
+      const stat = statSync(full)
+      if (!stat.isFile()) continue
+    } catch {
+      continue
     }
-  } catch {}
+    if (patterns.some((p) => p.test(entry))) {
+      results.push(full)
+      if (results.length >= maxFiles) break
+    }
+  }
   return results
 }
 

@@ -4,6 +4,10 @@ import { homedir } from "os"
 import { resolve, dirname } from "path"
 import { fileURLToPath } from "url"
 import { execSync } from "child_process"
+import {
+  pluginCacheStatus,
+  refreshOpenCodePluginAgentFiles,
+} from "./plugin-cache.mjs"
 
 const CONFIG_PATH = ".opencode/devloom/config.json"
 const AGENTS_DIR = homedir() + "/.config/opencode/agents"
@@ -76,15 +80,16 @@ export const PROFILES = {
 }
 
 export const FREE_CANDIDATES_BY_ROLE = {
-  planning: ["opencode/nemotron-3-ultra-free", "opencode/big-pickle", "opencode/mimo-v2.5-free", "opencode/deepseek-v4-flash-free", "opencode/hy3-free", "opencode/north-mini-code-free"],
-  implementation: ["opencode/mimo-v2.5-free", "opencode/deepseek-v4-flash-free", "opencode/nemotron-3-ultra-free", "opencode/big-pickle", "opencode/north-mini-code-free", "opencode/hy3-free"],
-  verification: ["opencode/deepseek-v4-flash-free", "opencode/mimo-v2.5-free", "opencode/nemotron-3-ultra-free", "opencode/big-pickle", "opencode/north-mini-code-free", "opencode/hy3-free"],
-  documentation: ["opencode/nemotron-3-ultra-free", "opencode/mimo-v2.5-free", "opencode/big-pickle", "opencode/deepseek-v4-flash-free", "opencode/hy3-free", "opencode/north-mini-code-free"],
+  orchestration: ["opencode/deepseek-v4-flash-free", "opencode/nemotron-3-ultra-free", "opencode/mimo-v2.5-free", "opencode/big-pickle", "opencode/north-mini-code-free", "opencode/laguna-s-2.1-free", "opencode/ling-3.0-flash-free", "opencode/longcat-2.0-free"],
+  planning: ["opencode/nemotron-3-ultra-free", "opencode/deepseek-v4-flash-free", "opencode/mimo-v2.5-free", "opencode/big-pickle", "opencode/north-mini-code-free", "opencode/laguna-s-2.1-free", "opencode/ling-3.0-flash-free", "opencode/longcat-2.0-free"],
+  implementation: ["opencode/deepseek-v4-flash-free", "opencode/mimo-v2.5-free", "opencode/nemotron-3-ultra-free", "opencode/big-pickle", "opencode/north-mini-code-free", "opencode/laguna-s-2.1-free", "opencode/ling-3.0-flash-free", "opencode/longcat-2.0-free"],
+  verification: ["opencode/deepseek-v4-flash-free", "opencode/mimo-v2.5-free", "opencode/nemotron-3-ultra-free", "opencode/big-pickle", "opencode/north-mini-code-free", "opencode/laguna-s-2.1-free", "opencode/ling-3.0-flash-free", "opencode/longcat-2.0-free"],
+  documentation: ["opencode/nemotron-3-ultra-free", "opencode/mimo-v2.5-free", "opencode/deepseek-v4-flash-free", "opencode/big-pickle", "opencode/north-mini-code-free", "opencode/laguna-s-2.1-free", "opencode/ling-3.0-flash-free", "opencode/longcat-2.0-free"],
   vision: ["opencode/mimo-v2.5-free", "opencode-go/minimax-m3", "opencode-go/glm-5.2", "opencode-go/kimi-k2.7-code"]
 }
 
 export const FREE_ROLE_MAP = {
-  orchestrator: "planning",
+  orchestrator: "orchestration",
   planner: "planning",
   developer: "implementation",
   qa: "verification",
@@ -215,16 +220,36 @@ function ensureAgentFiles() {
   }
 }
 
-export function applyModelsToAgentFiles(models) {
+export const AGENT_VARIANTS = {
+  developer: ["developer", "developer-flash", "developer-senior"],
+  planner: ["planner", "planner-flash", "planner-senior"],
+  qa: ["qa", "qa-flash"],
+  verifier: ["verifier"],
+  security: ["security", "security-senior"],
+  documenter: ["documenter", "documenter-flash"],
+  orchestrator: ["orchestrator"],
+  vision: ["vision"]
+}
+
+export function applyModelsToAgentFiles(models, profileLabel = "") {
   ensureAgentFiles()
   for (const [agent, model] of Object.entries(models)) {
-    const f = resolve(AGENTS_DIR, `devloom-${agent}.md`)
-    if (!existsSync(f)) continue
-    try {
-      let content = readFileSync(f, "utf8")
-      content = content.replace(/^model: .*/m, `model: ${model}`)
-      writeFileSync(f, content)
-    } catch {}
+    const variants = AGENT_VARIANTS[agent] || [agent]
+    for (const v of variants) {
+      const f = resolve(AGENTS_DIR, `devloom-${v}.md`)
+      if (!existsSync(f)) continue
+      try {
+        let content = readFileSync(f, "utf8")
+        content = content.replace(/^model: .*/m, `model: ${model}`)
+        if (v === "orchestrator" && profileLabel) {
+          content = content.replace(/^(description: "DevLoom Orchestrator:)([^"]*)"/m, (_, prefix, rest) => {
+            const cleaned = rest.replace(/\s*\(profile: [^)]*\)/, "")
+            return `${prefix}${cleaned} (profile: ${profileLabel})"`
+          })
+        }
+        writeFileSync(f, content)
+      } catch {}
+    }
   }
 }
 
@@ -233,6 +258,14 @@ export function cmdApplyTier(tierName, available) {
   if (!tier) {
     console.error("Unknown tier:", tierName)
     console.error("Valid tiers: senior, standard")
+    process.exit(1)
+  }
+
+  const config = readConfig()
+  if (config.resolvedProfile === "go-flash" || config.resolvedProfile === "free") {
+    console.error(`Cannot apply tier "${tierName}" to profile "${config.resolvedProfile}".`)
+    console.error(`Profile "${config.resolvedProfile}" locks all models to its profile definition.`)
+    console.error("Switch to 'go' or 'go-economy' profile to use tier overrides.")
     process.exit(1)
   }
 
@@ -246,7 +279,6 @@ export function cmdApplyTier(tierName, available) {
 
   applyModelsToAgentFiles(models)
 
-  const config = readConfig()
   config.tier = tierName
   config.tierModels = models
   config.models = { ...models }
@@ -331,14 +363,23 @@ export function cmdSet(profileName) {
     resolvedProfile,
     models,
     overrides: prev.overrides || {},
-    tier: prev.tier || null,
-    tierModels: prev.tierModels || null,
+    tier: (resolvedProfile === "free" || resolvedProfile === "go-flash") ? null : (prev.tier || null),
+    tierModels: (resolvedProfile === "free" || resolvedProfile === "go-flash") ? null : (prev.tierModels || null),
     availableModelsSnapshot: available,
     fallbacks
   }
 
   writeConfig(config)
-  applyModelsToAgentFiles(models)
+  applyModelsToAgentFiles(models, config.resolvedProfile ?? config.profile)
+
+  const cacheStatus = pluginCacheStatus()
+  if (cacheStatus === "ok") {
+    refreshOpenCodePluginAgentFiles(AGENTS_DIR)
+    console.log("OpenCode plugin cache refreshed with the current profile.")
+  } else {
+    console.log(`Note: DevLoom plugin cache is ${cacheStatus === "missing" ? "missing" : "stale"} — run /devloom-refresh once, then restart opencode to see the profile in the sidebar.`)
+  }
+  console.log("Restart opencode (or run: opencode --continue) to see the updated profile and agents in the sidebar.")
 
   return config
 }
@@ -351,7 +392,11 @@ export function cmdCurrent() {
     return
   }
   console.log(`Profile: ${config.profile}`)
-  if (config.tier) console.log(`Tier: ${config.tier}`)
+  if (config.tier) {
+    console.log(`Tier: ${config.tier}`)
+  } else if (config.resolvedProfile === "go-flash" || config.resolvedProfile === "free") {
+    console.log(`Tier: locked (profile "${config.resolvedProfile}" does not support tier overrides)`)
+  }
   console.log("")
   const activeModels = config.tierModels || config.models
   console.log("Resolved models:")
@@ -411,13 +456,26 @@ export function cmdApply() {
   }
   const available = detectAvailableModels()
   const models = config.models || {}
-  applyModelsToAgentFiles(models)
+  applyModelsToAgentFiles(models, config.resolvedProfile ?? config.profile)
 
   config.availableModelsSnapshot = available
   config.requiresReload = true
   writeConfig(config)
 
   console.log("Profile applied to agent files.")
+  console.log("")
+
+  const cacheStatus = pluginCacheStatus()
+  if (cacheStatus === "ok") {
+    refreshOpenCodePluginAgentFiles(AGENTS_DIR)
+    console.log("OpenCode plugin cache refreshed with the current profile.")
+  } else {
+    console.log(`NOTE: the DevLoom plugin cache is ${cacheStatus === "missing" ? "missing (plugin not installed in OpenCode)" : "stale"} —`)
+    console.log("the profile will not show in the sidebar until the plugin code is refreshed.")
+    console.log("Run: /devloom-refresh   (or: npm install -g devloom && opencode plugin devloom --global --force)")
+  }
+  console.log("")
+  console.log("Restart opencode (or run: opencode --continue) to see the updated profile and agents in the sidebar.")
   console.log("")
 
   if (existsSync(AGENTS_DIR)) {

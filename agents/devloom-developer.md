@@ -2,7 +2,6 @@
 description: "DevLoom Developer: callable by the orchestrator for ticket implementation and defect fixes"
 mode: subagent
 model: opencode-go/kimi-k2.7-code
-hidden: true
 permission:
   edit: allow
   bash: allow

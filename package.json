@@ -5,8 +5,27 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./server": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./tui": {
+      "import": "./dist/tui.js",
+      "types": "./dist/tui.d.ts"
+    }
+  },
+  "dependencies": {
+    "@opentui/solid": "0.4.5",
+    "solid-js": "1.9.12"
+  },
   "files": [
     ".ai",
+    ".opencode/themes",
     "dist",
     "agents",
     "commands",

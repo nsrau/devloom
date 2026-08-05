@@ -1,10 +1,11 @@
-import { execSync } from "node:child_process"
+import { execFileSync } from "node:child_process"
 import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs"
 import { join, dirname } from "node:path"
 
 const WORKTREE_DIR = ".devloom-worktrees"
 const REGISTRY_PATH = join(WORKTREE_DIR, ".registry.json")
 const GIT_TIMEOUT = 30_000
+const GIT_MAX_BUFFER = 10 * 1024 * 1024
 
 export type WorktreeEntry = {
   branch: string
@@ -49,27 +50,29 @@ export type CleanResult = {
 
 type Registry = { worktrees: WorktreeEntry[] }
 
-function git(rootDir: string, args: string, opts: { timeout?: number; throwOnError?: boolean; stdio?: any } = {}): string {
+function git(rootDir: string, args: string[], opts: { timeout?: number; throwOnError?: boolean; stdio?: any } = {}): string {
   const timeout = opts.timeout ?? GIT_TIMEOUT
   try {
-    return execSync(`git ${args}`, {
+    const out = execFileSync("git", args, {
       cwd: rootDir,
       encoding: "utf8",
       timeout,
+      maxBuffer: GIT_MAX_BUFFER,
       stdio: opts.stdio ?? ["pipe", "pipe", "pipe"],
-    }).trim()
+    })
+    return String(out).trim()
   } catch (err: any) {
     if (opts.throwOnError !== false) {
       const stderr = err.stderr ? String(err.stderr).trim() : ""
-      throw new Error(`git ${args.split(" ")[0]} failed: ${err.message}${stderr ? " | " + stderr : ""}`)
+      throw new Error(`git ${args[0] || ""} failed: ${err.message}${stderr ? " | " + stderr : ""}`)
     }
     return ""
   }
 }
 
-function gitOk(rootDir: string, args: string): boolean {
+function gitOk(rootDir: string, args: string[]): boolean {
   try {
-    execSync(`git ${args}`, { cwd: rootDir, encoding: "utf8", timeout: GIT_TIMEOUT, stdio: ["pipe", "pipe", "pipe"] })
+    execFileSync("git", args, { cwd: rootDir, encoding: "utf8", timeout: GIT_TIMEOUT, maxBuffer: GIT_MAX_BUFFER, stdio: ["pipe", "pipe", "pipe"] })
     return true
   } catch {
     return false
@@ -91,23 +94,23 @@ function writeJson(path: string, data: unknown): void {
 }
 
 function isGitRepo(rootDir: string): boolean {
-  return gitOk(rootDir, "rev-parse --is-inside-work-tree")
+  return gitOk(rootDir, ["rev-parse", "--is-inside-work-tree"])
 }
 
 export function getCurrentBranch(rootDir: string): string {
-  return git(rootDir, "rev-parse --abbrev-ref HEAD")
+  return git(rootDir, ["rev-parse", "--abbrev-ref", "HEAD"])
 }
 
 export function isClean(rootDir: string): boolean {
-  const status = git(rootDir, "status --porcelain")
+  const status = git(rootDir, ["status", "--porcelain"])
   return status.length === 0
 }
 
 function commitAll(rootDir: string, message: string): string | null {
-  git(rootDir, "add -A")
+  git(rootDir, ["add", "-A"])
   if (isClean(rootDir)) return null
-  git(rootDir, `commit -m ${JSON.stringify(message)}`)
-  return git(rootDir, "rev-parse HEAD")
+  git(rootDir, ["commit", "-m", message])
+  return git(rootDir, ["rev-parse", "HEAD"])
 }
 
 function branchSlug(branchName: string): string {
@@ -147,13 +150,17 @@ export function createWorktree(rootDir: string, branchName: string, baseRef?: st
   const wtPath = worktreePath(rootDir, branchName)
 
   if (existsSync(wtPath)) {
-    gitOk(rootDir, `worktree remove --force ${JSON.stringify(wtPath)}`)
+    gitOk(rootDir, ["worktree", "remove", "--force", wtPath])
     rmSync(wtPath, { recursive: true, force: true })
   }
 
-  const existing = git(rootDir, "branch --list", { throwOnError: false })
+  // Exact match: a substring test makes a sibling branch (`feat/x-old`) look
+  // like a collision with `feat/x`, and the resulting `branch -D` then throws.
+  const existing = git(rootDir, ["branch", "--list", "--format=%(refname:short)"], { throwOnError: false })
+    .split("\n")
+    .map((b) => b.trim())
   if (existing.includes(branchName)) {
-    git(rootDir, `branch -D ${JSON.stringify(branchName)}`)
+    git(rootDir, ["branch", "-D", branchName])
   }
 
   ensureGitignore(rootDir)
@@ -162,7 +169,7 @@ export function createWorktree(rootDir: string, branchName: string, baseRef?: st
     commitAll(rootDir, `devloom: auto-commit before worktree ${branchName}`)
   }
 
-  git(rootDir, `worktree add -b ${JSON.stringify(branchName)} ${JSON.stringify(wtPath)} ${JSON.stringify(ref)}`)
+  git(rootDir, ["worktree", "add", "-b", branchName, wtPath, ref])
 
   const parts = branchName.split("/")
   const entry: WorktreeEntry = {
@@ -205,16 +212,16 @@ export function mergeWorktree(rootDir: string, branchName: string): MergeResult 
     commitAll(rootDir, `devloom: auto-commit before merge of ${branchName}`)
   }
 
-  const mergeOut = git(rootDir, `merge --no-ff ${JSON.stringify(branchName)} -m ${JSON.stringify(`devloom: merge ${branchName}`)}`, { throwOnError: false })
+  const mergeOut = git(rootDir, ["merge", "--no-ff", branchName, "-m", `devloom: merge ${branchName}`], { throwOnError: false })
 
-  const hasMergeHead = gitOk(rootDir, "rev-parse -q --verify MERGE_HEAD")
+  const hasMergeHead = gitOk(rootDir, ["rev-parse", "-q", "--verify", "MERGE_HEAD"])
 
   if (hasMergeHead) {
-    const conflictFiles = git(rootDir, "diff --name-only --diff-filter=U", { throwOnError: false })
+    const conflictFiles = git(rootDir, ["diff", "--name-only", "--diff-filter=U"], { throwOnError: false })
     const conflicts = conflictFiles ? conflictFiles.split("\n").filter(Boolean) : []
 
     if (conflicts.length > 0 || mergeOut.includes("CONFLICT") || mergeOut.includes("Automatic merge failed")) {
-      git(rootDir, "merge --abort")
+      git(rootDir, ["merge", "--abort"])
       return {
         success: false,
         conflicts,
@@ -223,7 +230,7 @@ export function mergeWorktree(rootDir: string, branchName: string): MergeResult 
         worktreePath: wtPath,
       }
     }
-    git(rootDir, "merge --abort")
+    git(rootDir, ["merge", "--abort"])
     return {
       success: false,
       conflicts: [],
@@ -233,8 +240,8 @@ export function mergeWorktree(rootDir: string, branchName: string): MergeResult 
     }
   }
 
-  git(rootDir, `worktree remove ${JSON.stringify(wtPath)}`)
-  git(rootDir, `branch -d ${JSON.stringify(branchName)}`, { throwOnError: false })
+  git(rootDir, ["worktree", "remove", wtPath])
+  git(rootDir, ["branch", "-d", branchName], { throwOnError: false })
   rmSync(wtPath, { recursive: true, force: true })
   removeFromRegistry(rootDir, branchName)
 
@@ -257,12 +264,12 @@ export function removeWorktree(rootDir: string, branchName: string, force = fals
   }
 
   if (!force && !isClean(wtPath)) {
-    const status = git(wtPath, "status --porcelain")
+    const status = git(wtPath, ["status", "--porcelain"])
     throw new Error(`worktree ${branchName} has uncommitted changes. Use --force to discard.\nUncommitted:\n${status}`)
   }
 
-  git(rootDir, `worktree remove --force ${JSON.stringify(wtPath)}`)
-  git(rootDir, `branch -D ${JSON.stringify(branchName)}`, { throwOnError: false })
+  git(rootDir, ["worktree", "remove", "--force", wtPath])
+  git(rootDir, ["branch", "-D", branchName], { throwOnError: false })
   rmSync(wtPath, { recursive: true, force: true })
   removeFromRegistry(rootDir, branchName)
 
@@ -285,8 +292,8 @@ export function worktreeStatus(rootDir: string, branchName: string): WorktreeSta
   }
 
   const clean = isClean(entry.path)
-  const aheadStr = git(rootDir, `rev-list --count ${JSON.stringify(entry.baseRef)}..${JSON.stringify(branchName)}`, { throwOnError: false })
-  const behindStr = git(rootDir, `rev-list --count ${JSON.stringify(branchName)}..${JSON.stringify(entry.baseRef)}`, { throwOnError: false })
+  const aheadStr = git(rootDir, ["rev-list", "--count", `${entry.baseRef}..${branchName}`], { throwOnError: false })
+  const behindStr = git(rootDir, ["rev-list", "--count", `${branchName}..${entry.baseRef}`], { throwOnError: false })
 
   return {
     branch: branchName,
@@ -308,9 +315,11 @@ export function cleanWorktrees(rootDir: string, force = false): CleanResult[] {
 
   for (const w of reg.worktrees) {
     try {
-      const aheadStr = git(rootDir, `rev-list --count ${JSON.stringify(w.baseRef)}..${JSON.stringify(w.branch)}`, { throwOnError: false })
+      const aheadStr = git(rootDir, ["rev-list", "--count", `${w.baseRef}..${w.branch}`], { throwOnError: false })
       const ahead = parseInt(aheadStr) || 0
-      const isMerged = ahead > 0 && gitOk(rootDir, `merge-base --is-ancestor ${JSON.stringify(w.branch)} HEAD`)
+      // `ahead > 0` is deliberate: a 0-commit worktree is one an agent is still
+      // working in, and reclaiming it would discard uncommitted work.
+      const isMerged = ahead > 0 && gitOk(rootDir, ["merge-base", "--is-ancestor", w.branch, "HEAD"])
       if (isMerged || force) {
         removeWorktree(rootDir, w.branch, true)
         results.push({ branch: w.branch, removed: true })

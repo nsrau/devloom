@@ -2,7 +2,6 @@
 description: "DevLoom Planner Senior: callable by the orchestrator for complex requirements and architecture planning"
 mode: subagent
 model: opencode-go/glm-5.2
-hidden: true
 permission:
   edit: allow
   bash: allow
