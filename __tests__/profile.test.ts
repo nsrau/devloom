@@ -19,14 +19,21 @@ const ALL_GO_MODELS = [
 ]
 
 const ALL_FREE_MODELS = [
+  "opencode/x-preview-f-free",
+  "opencode/big-pickle",
   "opencode/nemotron-3-ultra-free",
+  "opencode/nemotron-3.5-lightning-free",
+  "opencode/mimo-v2.5-free",
+  "opencode/hy3-free",
+  "opencode/muse-spark-1.2-contributor-free",
+]
+
+const DEAD_FREE_MODELS = [
+  "opencode/deepseek-v4-flash-free",
   "opencode/north-mini-code-free",
   "opencode/laguna-s-2.1-free",
   "opencode/ling-3.0-flash-free",
   "opencode/longcat-2.0-free",
-  "opencode/mimo-v2.5-free",
-  "opencode/deepseek-v4-flash-free",
-  "opencode/big-pickle",
 ]
 
 const ALL_MODELS = [...ALL_GO_MODELS, ...ALL_FREE_MODELS]
@@ -95,15 +102,30 @@ describe("profile.mjs", () => {
     const profile = await importProfile()
     const config = profile.cmdSet("free")
     expect(Object.keys(config.models)).toHaveLength(8)
-    expect(config.models.orchestrator).toBe("opencode/deepseek-v4-flash-free")
+    expect(config.models.orchestrator).toBe("opencode/x-preview-f-free")
     for (const [role, model] of Object.entries(config.models) as [string, string][]) {
       if (role === "vision") {
-        // ponytail: no free vision models exist; free profile falls back to cheapest multimodal
+        // no general free chat fallback: vision role requires a vision-capable model
         expect(model).toMatch(/^opencode(-go)?\//);
       } else {
         expect(model).toMatch(/^(opencode\/.*-free|opencode\/big-pickle)$/)
       }
     }
+  })
+
+  test("free candidate chains reference only live catalog models", async () => {
+    const profile = await importProfile()
+    for (const [role, chain] of Object.entries(profile.FREE_CANDIDATES_BY_ROLE) as [string, string[]][]) {
+      expect(chain.length).toBeGreaterThan(0)
+      for (const id of chain) {
+        for (const dead of DEAD_FREE_MODELS) {
+          expect(`${role} -> ${id}`).not.toContain(dead)
+        }
+      }
+    }
+    const visionChain = (profile.FREE_CANDIDATES_BY_ROLE as Record<string, string[]>).vision
+    expect(visionChain[0]).toBe("opencode/mimo-v2.5-free")
+    expect(visionChain.every((id) => id.startsWith("opencode/") || id.startsWith("opencode-go/"))).toBe(true)
   })
 
   test("cmdSet('go') assigns correct go models without fallback", async () => {

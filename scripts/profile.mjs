@@ -80,12 +80,12 @@ export const PROFILES = {
 }
 
 export const FREE_CANDIDATES_BY_ROLE = {
-  orchestration: ["opencode/deepseek-v4-flash-free", "opencode/nemotron-3-ultra-free", "opencode/mimo-v2.5-free", "opencode/big-pickle", "opencode/north-mini-code-free", "opencode/laguna-s-2.1-free", "opencode/ling-3.0-flash-free", "opencode/longcat-2.0-free"],
-  planning: ["opencode/nemotron-3-ultra-free", "opencode/deepseek-v4-flash-free", "opencode/mimo-v2.5-free", "opencode/big-pickle", "opencode/north-mini-code-free", "opencode/laguna-s-2.1-free", "opencode/ling-3.0-flash-free", "opencode/longcat-2.0-free"],
-  implementation: ["opencode/deepseek-v4-flash-free", "opencode/mimo-v2.5-free", "opencode/nemotron-3-ultra-free", "opencode/big-pickle", "opencode/north-mini-code-free", "opencode/laguna-s-2.1-free", "opencode/ling-3.0-flash-free", "opencode/longcat-2.0-free"],
-  verification: ["opencode/deepseek-v4-flash-free", "opencode/mimo-v2.5-free", "opencode/nemotron-3-ultra-free", "opencode/big-pickle", "opencode/north-mini-code-free", "opencode/laguna-s-2.1-free", "opencode/ling-3.0-flash-free", "opencode/longcat-2.0-free"],
-  documentation: ["opencode/nemotron-3-ultra-free", "opencode/mimo-v2.5-free", "opencode/deepseek-v4-flash-free", "opencode/big-pickle", "opencode/north-mini-code-free", "opencode/laguna-s-2.1-free", "opencode/ling-3.0-flash-free", "opencode/longcat-2.0-free"],
-  vision: ["opencode/mimo-v2.5-free", "opencode-go/minimax-m3", "opencode-go/glm-5.2", "opencode-go/kimi-k2.7-code"]
+  orchestration: ["opencode/x-preview-f-free", "opencode/big-pickle", "opencode/nemotron-3-ultra-free", "opencode/mimo-v2.5-free", "opencode/hy3-free", "opencode/muse-spark-1.2-contributor-free", "opencode/nemotron-3.5-lightning-free"],
+  planning: ["opencode/nemotron-3-ultra-free", "opencode/muse-spark-1.2-contributor-free", "opencode/x-preview-f-free", "opencode/big-pickle", "opencode/hy3-free", "opencode/nemotron-3.5-lightning-free"],
+  implementation: ["opencode/big-pickle", "opencode/x-preview-f-free", "opencode/nemotron-3-ultra-free", "opencode/nemotron-3.5-lightning-free", "opencode/hy3-free", "opencode/mimo-v2.5-free"],
+  verification: ["opencode/big-pickle", "opencode/x-preview-f-free", "opencode/nemotron-3-ultra-free", "opencode/nemotron-3.5-lightning-free", "opencode/hy3-free", "opencode/mimo-v2.5-free"],
+  documentation: ["opencode/muse-spark-1.2-contributor-free", "opencode/nemotron-3-ultra-free", "opencode/x-preview-f-free", "opencode/hy3-free", "opencode/mimo-v2.5-free"],
+  vision: ["opencode/mimo-v2.5-free", "opencode-go/mimo-v2.5-pro", "opencode-go/minimax-m3", "opencode-go/deepseek-v4-flash-vision-exp"]
 }
 
 export const FREE_ROLE_MAP = {
@@ -148,7 +148,7 @@ export function pickBestFree(available, role) {
     }
   }
   const freeModels = getFreeModels(available)
-  return freeModels.length > 0 ? freeModels[0] : "opencode/deepseek-v4-flash-free"
+  return freeModels.length > 0 ? freeModels[0] : "opencode/big-pickle"
 }
 
 export function resolveFreeProfile(available) {
