@@ -158,7 +158,7 @@ persists state, while the matching subagent executes each specialist phase.
 
 ### Default (no config)
 
-All agents default to the best available free model via per-role candidate chains — currently led by `opencode/x-preview-f-free` (orchestrator), `opencode/nemotron-3-ultra-free` (planner), `opencode/big-pickle` (developer/QA/verifier/security) and `opencode/muse-spark-1.2-contributor-free` (documenter).
+All agents default to the best available free model via per-role candidate chains — currently led by `opencode/big-pickle` (orchestrator), `opencode/nemotron-3-ultra-free` (planner), `opencode/big-pickle` (developer/QA/verifier/security) and `opencode/muse-spark-1.2-contributor-free` (documenter).
 
 ### Model Routing — Three Profiles
 
@@ -237,7 +237,7 @@ The profile determines which model is assigned to each of the 8 agent roles. Pre
     "verifier": "opencode-go/deepseek-v4-flash",
     "security": "opencode-go/deepseek-v4-pro",
     "documenter": "opencode-go/deepseek-v4-flash",
-    "vision": "opencode-go/qwen3.6-plus"
+    "vision": "opencode-go/deepseek-v4-flash-vision-exp"
   }
 }
 ```
@@ -247,7 +247,7 @@ The profile determines which model is assigned to each of the 8 agent roles. Pre
 ```json
 {
   "models": {
-    "orchestrator": "opencode/x-preview-f-free",
+    "orchestrator": "opencode/big-pickle",
     "planner": "opencode/nemotron-3-ultra-free",
     "developer": "opencode/big-pickle",
     "qa": "opencode/big-pickle",
@@ -299,12 +299,12 @@ If no `config.json` exists, Phase 0 detects available models (`opencode models`)
 | Model string |
 |---|
 | `opencode/big-pickle` |
-| `opencode/hy3-free` |
+| `opencode/ling-3.0-flash-fin-free` |
 | `opencode/mimo-v2.5-free` |
 | `opencode/muse-spark-1.2-contributor-free` |
+| `opencode/muse-spark-1.3-contributor-free` |
 | `opencode/nemotron-3-ultra-free` |
 | `opencode/nemotron-3.5-lightning-free` |
-| `opencode/x-preview-f-free` |
 
 **Go tier** (`opencode-go/` — higher quality, paid):
 
@@ -363,7 +363,7 @@ profile or the injected agent configs. DevLoom keeps that cache in sync:
   source first, so the cache never receives stale compiled code.
 - The sidebar header shows the active profile (`DevLoom - free`, `DevLoom - go`,
   ...) and every agent row shows its resolved model (e.g.
-  `orchestrator: opencode/x-preview-f-free`). The active profile is also
+  `orchestrator: opencode/big-pickle`). The active profile is also
   visible on the orchestrator agent description:
   `DevLoom Orchestrator: autonomous multi-agent delivery (profile: go-flash)`.
   With a senior tier override the label is extended to

@@ -22,17 +22,17 @@ export const TIERS = {
     verifier: "opencode-go/deepseek-v4-pro",
     security: "opencode-go/glm-5.2",
     documenter: "opencode-go/qwen3.7-plus",
-    vision: "opencode-go/qwen3.6-plus"
+    vision: "opencode-go/glm-5.3-flash"
   },
   standard: {
     orchestrator: "opencode-go/deepseek-v4-flash",
     planner: "opencode-go/qwen3.7-max",
-    developer: "opencode-go/kimi-k2.7-code",
+    developer: "opencode-go/glm-5.3-flash",
     qa: "opencode-go/deepseek-v4-flash",
     verifier: "opencode-go/deepseek-v4-flash",
     security: "opencode-go/deepseek-v4-flash",
     documenter: "opencode-go/deepseek-v4-flash",
-    vision: "opencode-go/qwen3.6-plus"
+    vision: "opencode-go/glm-5.3-flash"
   }
 }
 
@@ -40,12 +40,12 @@ export const PROFILES = {
   go: {
     orchestrator: "opencode-go/deepseek-v4-flash",
     planner: "opencode-go/qwen3.7-max",
-    developer: "opencode-go/kimi-k2.7-code",
+    developer: "opencode-go/glm-5.3-flash",
     qa: "opencode-go/deepseek-v4-pro",
     verifier: "opencode-go/deepseek-v4-pro",
     security: "opencode-go/glm-5.2",
     documenter: "opencode-go/qwen3.7-plus",
-    vision: "opencode-go/minimax-m3"
+    vision: "opencode-go/glm-5.3-flash"
   },
   "go-economy": {
     orchestrator: "opencode-go/deepseek-v4-flash",
@@ -55,7 +55,7 @@ export const PROFILES = {
     verifier: "opencode-go/deepseek-v4-flash",
     security: "opencode-go/deepseek-v4-pro",
     documenter: "opencode-go/qwen3.7-plus",
-    vision: "opencode-go/minimax-m3"
+    vision: "opencode-go/glm-5.3-flash"
   },
   deepseek: {
     orchestrator: "opencode-go/deepseek-v4-pro",
@@ -65,7 +65,17 @@ export const PROFILES = {
     verifier: "opencode-go/deepseek-v4-flash",
     security: "opencode-go/deepseek-v4-pro",
     documenter: "opencode-go/deepseek-v4-flash",
-    vision: "opencode-go/minimax-m3"
+    vision: "opencode-go/deepseek-v4-flash-vision-exp"
+  },
+  glm: {
+    orchestrator: "opencode-go/glm-5.3-flash",
+    planner: "opencode-go/glm-5.3-flash",
+    developer: "opencode-go/glm-5.3-flash",
+    qa: "opencode-go/glm-5.3-flash",
+    verifier: "opencode-go/glm-5.3-flash",
+    security: "opencode-go/glm-5.3-flash",
+    documenter: "opencode-go/glm-5.3-flash",
+    vision: "opencode-go/glm-5.3-flash"
   },
   "go-flash": {
     orchestrator: "opencode-go/deepseek-v4-flash",
@@ -75,17 +85,17 @@ export const PROFILES = {
     verifier: "opencode-go/deepseek-v4-flash",
     security: "opencode-go/deepseek-v4-flash",
     documenter: "opencode-go/deepseek-v4-flash",
-    vision: "opencode-go/minimax-m3"
+    vision: "opencode-go/glm-5.3-flash"
   }
 }
 
 export const FREE_CANDIDATES_BY_ROLE = {
-  orchestration: ["opencode/x-preview-f-free", "opencode/big-pickle", "opencode/nemotron-3-ultra-free", "opencode/mimo-v2.5-free", "opencode/hy3-free", "opencode/muse-spark-1.2-contributor-free", "opencode/nemotron-3.5-lightning-free"],
-  planning: ["opencode/nemotron-3-ultra-free", "opencode/muse-spark-1.2-contributor-free", "opencode/x-preview-f-free", "opencode/big-pickle", "opencode/hy3-free", "opencode/nemotron-3.5-lightning-free"],
-  implementation: ["opencode/big-pickle", "opencode/x-preview-f-free", "opencode/nemotron-3-ultra-free", "opencode/nemotron-3.5-lightning-free", "opencode/hy3-free", "opencode/mimo-v2.5-free"],
-  verification: ["opencode/big-pickle", "opencode/x-preview-f-free", "opencode/nemotron-3-ultra-free", "opencode/nemotron-3.5-lightning-free", "opencode/hy3-free", "opencode/mimo-v2.5-free"],
-  documentation: ["opencode/muse-spark-1.2-contributor-free", "opencode/nemotron-3-ultra-free", "opencode/x-preview-f-free", "opencode/hy3-free", "opencode/mimo-v2.5-free"],
-  vision: ["opencode/mimo-v2.5-free", "opencode-go/mimo-v2.5-pro", "opencode-go/minimax-m3", "opencode-go/deepseek-v4-flash-vision-exp"]
+  orchestration: ["opencode/big-pickle", "opencode/nemotron-3-ultra-free", "opencode/mimo-v2.5-free", "opencode/muse-spark-1.3-contributor-free", "opencode/muse-spark-1.2-contributor-free", "opencode/nemotron-3.5-lightning-free", "opencode/ling-3.0-flash-fin-free"],
+  planning: ["opencode/nemotron-3-ultra-free", "opencode/muse-spark-1.3-contributor-free", "opencode/muse-spark-1.2-contributor-free", "opencode/big-pickle", "opencode/nemotron-3.5-lightning-free", "opencode/ling-3.0-flash-fin-free"],
+  implementation: ["opencode/big-pickle", "opencode/nemotron-3-ultra-free", "opencode/nemotron-3.5-lightning-free", "opencode/mimo-v2.5-free", "opencode/ling-3.0-flash-fin-free"],
+  verification: ["opencode/big-pickle", "opencode/nemotron-3-ultra-free", "opencode/nemotron-3.5-lightning-free", "opencode/mimo-v2.5-free", "opencode/ling-3.0-flash-fin-free"],
+  documentation: ["opencode/muse-spark-1.3-contributor-free", "opencode/muse-spark-1.2-contributor-free", "opencode/nemotron-3-ultra-free", "opencode/mimo-v2.5-free", "opencode/ling-3.0-flash-fin-free"],
+  vision: ["opencode/mimo-v2.5-free", "opencode-go/deepseek-v4-flash-vision-exp", "opencode-go/minimax-m3", "opencode-go/mimo-v2.5-pro"]
 }
 
 export const FREE_ROLE_MAP = {
@@ -291,7 +301,7 @@ export function cmdSet(profileName) {
   const available = detectAvailableModels()
   const hasGo = hasGoModels(available)
 
-  if ((profileName === "go" || profileName === "go-economy" || profileName === "deepseek" || profileName === "go-flash") && !hasGo) {
+  if ((profileName === "go" || profileName === "go-economy" || profileName === "deepseek" || profileName === "glm" || profileName === "go-flash") && !hasGo) {
     console.error("No OpenCode Go models detected. Run: opencode /connect to add OpenCode Go.")
     console.error("Fall back to: /devloom-auto or /devloom-free")
     process.exit(1)
@@ -329,6 +339,14 @@ export function cmdSet(profileName) {
       models = fb.result
       fallbacks = fb.fallbacks
     }
+  } else if (profileName === "glm") {
+    models = { ...PROFILES.glm }
+    unavailable = validateModels(models, available)
+    if (unavailable.length > 0) {
+      const fb = applyFallbacks(models, unavailable, available)
+      models = fb.result
+      fallbacks = fb.fallbacks
+    }
   } else if (profileName === "go-flash") {
     models = { ...PROFILES["go-flash"] }
     unavailable = validateModels(models, available)
@@ -353,7 +371,7 @@ export function cmdSet(profileName) {
     }
   } else {
     console.error("Unknown profile:", profileName)
-    console.error("Valid profiles: auto, go, go-economy, deepseek, go-flash, free")
+    console.error("Valid profiles: auto, go, go-economy, deepseek, glm, go-flash, free")
     process.exit(1)
   }
 
@@ -515,7 +533,7 @@ function main() {
 
   switch (command) {
     case "set":
-      if (!args[1]) { console.error("Usage: devloom profile set <auto|go|go-economy|free>"); process.exit(1) }
+      if (!args[1]) { console.error("Usage: devloom profile set <auto|go|go-economy|deepseek|glm|go-flash|free>"); process.exit(1) }
       cmdSet(args[1])
       console.log(`DevLoom profile changed to: ${args[1]}`)
       if (args[1] !== "free") {
@@ -545,7 +563,7 @@ function main() {
       console.log("DevLoom Profile Manager")
       console.log("")
       console.log("Commands:")
-      console.log("  devloom profile set <auto|go|go-economy|deepseek|go-flash|free>")
+      console.log("  devloom profile set <auto|go|go-economy|deepseek|glm|go-flash|free>")
       console.log("  devloom profile tier <senior|standard>")
       console.log("  devloom profile current")
       console.log("  devloom profile validate")

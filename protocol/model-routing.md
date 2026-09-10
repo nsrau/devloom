@@ -60,7 +60,7 @@ All agents on DeepSeek V4 Flash for maximum throughput at minimum cost. Vision u
 | vision | opencode-go/qwen3.6-plus |
 
 ### deepseek
-All DeepSeek V4 Pro agents (consistent provider affinity). Vision uses Qwen 3.6 Plus (multimodal).
+All DeepSeek V4 Pro agents (consistent provider affinity). Vision uses DeepSeek V4 Flash Vision Exp (cheapest vision-capable DeepSeek model: 0.22 input / 0.66 output vs Qwen 3.6 Plus 0.5/3).
 
 | Role | Model |
 |---|---|
@@ -71,14 +71,14 @@ All DeepSeek V4 Pro agents (consistent provider affinity). Vision uses Qwen 3.6 
 | verifier | opencode-go/deepseek-v4-pro |
 | security | opencode-go/deepseek-v4-pro |
 | documenter | opencode-go/deepseek-v4-pro |
-| vision | opencode-go/qwen3.6-plus |
+| vision | opencode-go/deepseek-v4-flash-vision-exp |
 
 ### free
-A zero-cost profile using only freely available models. Intended for experimentation, open-source projects, learning, and low-stakes development where cost must be zero. All agents use the best available free-tier model. If a specific free model is unavailable, the fallback chains are: orchestration: opencode/x-preview-f-free -> opencode/big-pickle -> opencode/nemotron-3-ultra-free -> opencode/mimo-v2.5-free -> opencode/hy3-free -> opencode/muse-spark-1.2-contributor-free -> opencode/nemotron-3.5-lightning-free; implementation/verification: opencode/big-pickle -> opencode/x-preview-f-free -> opencode/nemotron-3-ultra-free -> opencode/nemotron-3.5-lightning-free -> opencode/hy3-free -> opencode/mimo-v2.5-free; planning: opencode/nemotron-3-ultra-free -> opencode/muse-spark-1.2-contributor-free -> opencode/x-preview-f-free -> opencode/big-pickle -> opencode/hy3-free -> opencode/nemotron-3.5-lightning-free; documentation: opencode/muse-spark-1.2-contributor-free -> opencode/nemotron-3-ultra-free -> opencode/x-preview-f-free -> opencode/hy3-free -> opencode/mimo-v2.5-free; vision: opencode/mimo-v2.5-free -> opencode-go/mimo-v2.5-pro -> opencode-go/minimax-m3 -> opencode-go/deepseek-v4-flash-vision-exp.
+A zero-cost profile using only freely available models. Intended for experimentation, open-source projects, learning, and low-stakes development where cost must be zero. All agents use the best available free-tier model. If a specific free model is unavailable, the fallback chains are: orchestration: opencode/big-pickle -> opencode/nemotron-3-ultra-free -> opencode/mimo-v2.5-free -> opencode/muse-spark-1.3-contributor-free -> opencode/muse-spark-1.2-contributor-free -> opencode/nemotron-3.5-lightning-free -> opencode/ling-3.0-flash-fin-free; implementation/verification: opencode/big-pickle -> opencode/nemotron-3-ultra-free -> opencode/nemotron-3.5-lightning-free -> opencode/mimo-v2.5-free -> opencode/ling-3.0-flash-fin-free; planning: opencode/nemotron-3-ultra-free -> opencode/muse-spark-1.3-contributor-free -> opencode/muse-spark-1.2-contributor-free -> opencode/big-pickle -> opencode/nemotron-3.5-lightning-free -> opencode/ling-3.0-flash-fin-free; documentation: opencode/muse-spark-1.3-contributor-free -> opencode/muse-spark-1.2-contributor-free -> opencode/nemotron-3-ultra-free -> opencode/mimo-v2.5-free -> opencode/ling-3.0-flash-fin-free; vision: opencode/mimo-v2.5-free -> opencode-go/deepseek-v4-flash-vision-exp -> opencode-go/minimax-m3 -> opencode-go/mimo-v2.5-pro (paid fallbacks ordered by cost, cheapest first: deepseek 0.22/0.66 < minimax 0.3/1.2 < mimo-pro 0.435/0.87).
 
 | Role | Model |
 |---|---|
-| orchestrator | opencode/x-preview-f-free |
+| orchestrator | opencode/big-pickle |
 | planner | opencode/nemotron-3-ultra-free |
 | developer | opencode/big-pickle |
 | qa | opencode/big-pickle |
@@ -129,7 +129,7 @@ Qwen 3.7 Plus (opencode-go/qwen3.7-plus) is the latest Qwen model — documentat
 
 ### When to Use Free Tier Models
 
-Free models (opencode/x-preview-f-free, opencode/big-pickle, opencode/nemotron-3-ultra-free, opencode/nemotron-3.5-lightning-free, opencode/mimo-v2.5-free, opencode/hy3-free, opencode/muse-spark-1.2-contributor-free) are suitable only when cost must be zero — experimentation, learning, or evaluation. They have lower reasoning capability than paid Go models in some roles, not recommended for production work. The `vision` role always resolves to a vision-capable model (mimo-v2.5-free on the free tier).
+Free models (opencode/big-pickle, opencode/nemotron-3-ultra-free, opencode/nemotron-3.5-lightning-free, opencode/mimo-v2.5-free, opencode/muse-spark-1.3-contributor-free, opencode/muse-spark-1.2-contributor-free, opencode/ling-3.0-flash-fin-free) are suitable only when cost must be zero — experimentation, learning, or evaluation. They have lower reasoning capability than paid Go models in some roles, not recommended for production work. The `vision` role always resolves to a vision-capable model (mimo-v2.5-free on the free tier, with DeepSeek V4 Flash Vision Exp as cheapest paid fallback).
 
 ## Frontend vs Backend Guidance
 

@@ -7,25 +7,29 @@ const CONFIG_PATH = ".opencode/devloom/config.json"
 
 const ALL_GO_MODELS = [
   "opencode-go/glm-5.2",
+  "opencode-go/glm-5.3-flash",
   "opencode-go/kimi-k2.7-code",
+  "opencode-go/kimi-k3",
   "opencode-go/deepseek-v4-pro",
   "opencode-go/deepseek-v4-flash",
+  "opencode-go/deepseek-v4-flash-vision-exp",
   "opencode-go/qwen3.6-plus",
   "opencode-go/qwen3.7-plus",
   "opencode-go/qwen3.7-max",
   "opencode-go/mimo-v2.5",
   "opencode-go/mimo-v2.5-pro",
+  "opencode-go/minimax-m2.7",
   "opencode-go/minimax-m3",
 ]
 
 const ALL_FREE_MODELS = [
-  "opencode/x-preview-f-free",
   "opencode/big-pickle",
   "opencode/nemotron-3-ultra-free",
   "opencode/nemotron-3.5-lightning-free",
   "opencode/mimo-v2.5-free",
-  "opencode/hy3-free",
+  "opencode/muse-spark-1.3-contributor-free",
   "opencode/muse-spark-1.2-contributor-free",
+  "opencode/ling-3.0-flash-fin-free",
 ]
 
 const DEAD_FREE_MODELS = [
@@ -34,6 +38,8 @@ const DEAD_FREE_MODELS = [
   "opencode/laguna-s-2.1-free",
   "opencode/ling-3.0-flash-free",
   "opencode/longcat-2.0-free",
+  "opencode/x-preview-f-free",
+  "opencode/hy3-free",
 ]
 
 const ALL_MODELS = [...ALL_GO_MODELS, ...ALL_FREE_MODELS]
@@ -102,7 +108,7 @@ describe("profile.mjs", () => {
     const profile = await importProfile()
     const config = profile.cmdSet("free")
     expect(Object.keys(config.models)).toHaveLength(8)
-    expect(config.models.orchestrator).toBe("opencode/x-preview-f-free")
+    expect(config.models.orchestrator).toBe("opencode/big-pickle")
     for (const [role, model] of Object.entries(config.models) as [string, string][]) {
       if (role === "vision") {
         // no general free chat fallback: vision role requires a vision-capable model
@@ -133,11 +139,11 @@ describe("profile.mjs", () => {
     const config = profile.cmdSet("go")
     expect(config.models.orchestrator).toBe("opencode-go/deepseek-v4-flash")
     expect(config.models.planner).toBe("opencode-go/qwen3.7-max")
-    expect(config.models.developer).toBe("opencode-go/kimi-k2.7-code")
+    expect(config.models.developer).toBe("opencode-go/glm-5.3-flash")
     expect(config.models.qa).toBe("opencode-go/deepseek-v4-pro")
     expect(config.models.security).toBe("opencode-go/glm-5.2")
     expect(config.models.documenter).toBe("opencode-go/qwen3.7-plus")
-    expect(config.models.vision).toBe("opencode-go/minimax-m3")
+    expect(config.models.vision).toBe("opencode-go/glm-5.3-flash")
     expect(Object.keys(config.fallbacks || {})).toHaveLength(0)
   })
 
@@ -147,9 +153,22 @@ describe("profile.mjs", () => {
     expect(Object.keys(config.models)).toHaveLength(8)
     for (const [role, model] of Object.entries(config.models) as [string, string][]) {
       if (role === "vision") {
-        expect(model).toMatch(/^opencode(-go)?\// )
+        expect(model).toBe("opencode-go/glm-5.3-flash")
       } else {
         expect(model).toBe("opencode-go/deepseek-v4-flash")
+      }
+    }
+  })
+
+  test("cmdSet('glm') assigns glm-5.3-flash to all agents", async () => {
+    const profile = await importProfile()
+    const config = profile.cmdSet("glm")
+    expect(Object.keys(config.models)).toHaveLength(8)
+    for (const [role, model] of Object.entries(config.models) as [string, string][]) {
+      if (role === "vision") {
+        expect(model).toBe("opencode-go/glm-5.3-flash")
+      } else {
+        expect(model).toBe("opencode-go/glm-5.3-flash")
       }
     }
   })
@@ -159,6 +178,7 @@ describe("profile.mjs", () => {
     const config = profile.cmdSet("deepseek")
     expect(config.models.orchestrator).toBe("opencode-go/deepseek-v4-pro")
     expect(config.models.verifier).toBe("opencode-go/deepseek-v4-flash")
+    expect(config.models.vision).toBe("opencode-go/deepseek-v4-flash-vision-exp")
   })
 
   test("cmdSet('auto') resolves to go-flash when go models are available", async () => {
@@ -209,12 +229,12 @@ describe("profile.mjs", () => {
   })
 
   test("cmdSet('go') falls back developer when go model is missing", async () => {
-    mockAvailable = ALL_MODELS.filter((m) => m !== "opencode-go/kimi-k2.7-code")
+    mockAvailable = ALL_MODELS.filter((m) => m !== "opencode-go/glm-5.3-flash")
     const profile = await importProfile()
     const config = profile.cmdSet("go")
     expect(config.models.developer).toMatch(/^(opencode\/.*-free|opencode\/big-pickle)$/)
     expect(config.fallbacks).toHaveProperty("developer")
-    expect(config.fallbacks.developer.from).toBe("opencode-go/kimi-k2.7-code")
+    expect(config.fallbacks.developer.from).toBe("opencode-go/glm-5.3-flash")
     expect(config.fallbacks.developer.to).toBe(config.models.developer)
   })
 
@@ -276,7 +296,7 @@ describe("profile.mjs", () => {
     for (const name of agentFiles) {
       const content = writtenFiles[`${AGENTS_DIR}/devloom-${name}.md`]
       if (name === "vision") {
-        expect(content).toContain("model: opencode-go/minimax-m3")
+        expect(content).toContain("model: opencode-go/glm-5.3-flash")
       } else {
         expect(content).toContain("model: opencode-go/deepseek-v4-flash")
       }
