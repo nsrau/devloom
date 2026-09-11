@@ -132,6 +132,14 @@ describe("profile.mjs", () => {
     const visionChain = (profile.FREE_CANDIDATES_BY_ROLE as Record<string, string[]>).vision
     expect(visionChain[0]).toBe("opencode/mimo-v2.5-free")
     expect(visionChain.every((id) => id.startsWith("opencode/") || id.startsWith("opencode-go/"))).toBe(true)
+    // benchmark 2026-09-11: muse-1.3 ties big-pickle on quality at lowest latency -> #2;
+    // nemotron-3-ultra correct but 3-10x slower -> demoted toward tail
+    const chains = profile.FREE_CANDIDATES_BY_ROLE as Record<string, string[]>
+    for (const role of ["orchestration", "implementation", "verification"]) {
+      expect(chains[role].slice(0, 2)).toEqual(["opencode/big-pickle", "opencode/muse-spark-1.3-contributor-free"])
+      expect(chains[role].indexOf("opencode/nemotron-3-ultra-free"))
+        .toBeGreaterThan(chains[role].indexOf("opencode/muse-spark-1.3-contributor-free"))
+    }
   })
 
   test("cmdSet('go') assigns correct go models without fallback", async () => {

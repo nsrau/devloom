@@ -90,10 +90,10 @@ export const PROFILES = {
 }
 
 export const FREE_CANDIDATES_BY_ROLE = {
-  orchestration: ["opencode/big-pickle", "opencode/nemotron-3-ultra-free", "opencode/mimo-v2.5-free", "opencode/muse-spark-1.3-contributor-free", "opencode/muse-spark-1.2-contributor-free", "opencode/nemotron-3.5-lightning-free", "opencode/ling-3.0-flash-fin-free"],
+  orchestration: ["opencode/big-pickle", "opencode/muse-spark-1.3-contributor-free", "opencode/mimo-v2.5-free", "opencode/muse-spark-1.2-contributor-free", "opencode/nemotron-3.5-lightning-free", "opencode/nemotron-3-ultra-free", "opencode/ling-3.0-flash-fin-free"],
   planning: ["opencode/nemotron-3-ultra-free", "opencode/muse-spark-1.3-contributor-free", "opencode/muse-spark-1.2-contributor-free", "opencode/big-pickle", "opencode/nemotron-3.5-lightning-free", "opencode/ling-3.0-flash-fin-free"],
-  implementation: ["opencode/big-pickle", "opencode/nemotron-3-ultra-free", "opencode/nemotron-3.5-lightning-free", "opencode/mimo-v2.5-free", "opencode/ling-3.0-flash-fin-free"],
-  verification: ["opencode/big-pickle", "opencode/nemotron-3-ultra-free", "opencode/nemotron-3.5-lightning-free", "opencode/mimo-v2.5-free", "opencode/ling-3.0-flash-fin-free"],
+  implementation: ["opencode/big-pickle", "opencode/muse-spark-1.3-contributor-free", "opencode/nemotron-3.5-lightning-free", "opencode/mimo-v2.5-free", "opencode/nemotron-3-ultra-free", "opencode/ling-3.0-flash-fin-free"],
+  verification: ["opencode/big-pickle", "opencode/muse-spark-1.3-contributor-free", "opencode/nemotron-3.5-lightning-free", "opencode/mimo-v2.5-free", "opencode/nemotron-3-ultra-free", "opencode/ling-3.0-flash-fin-free"],
   documentation: ["opencode/muse-spark-1.3-contributor-free", "opencode/muse-spark-1.2-contributor-free", "opencode/nemotron-3-ultra-free", "opencode/mimo-v2.5-free", "opencode/ling-3.0-flash-fin-free"],
   vision: ["opencode/mimo-v2.5-free", "opencode-go/deepseek-v4-flash-vision-exp", "opencode-go/minimax-m3", "opencode-go/mimo-v2.5-pro"]
 }
